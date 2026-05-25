@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VSDC Manager — Electronic Billing for Rwanda Taxpayers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/app.css">
+<style>
+  body { background: #fff; color: var(--ink-900); }
+
+  /* ---------- Top nav ---------- */
+  .lnav {
+    position: sticky; top: 0; z-index: 30;
+    background: rgba(255,255,255,.86);
+    backdrop-filter: saturate(180%) blur(14px);
+    border-bottom: 1px solid var(--ink-200);
+  }
+  .lnav__inner {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; gap: 26px;
+    padding: 14px 28px;
+  }
+  .lnav__brand { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+  .lnav__brand .brand-mark { width: 32px; height: 32px; font-size: 12px; }
+  .lnav__brand .brand-name { color: var(--ink-900); font-size: 15px; }
+  .lnav__links { display: flex; gap: 22px; }
+  .lnav__links a {
+    font-size: 13.5px; font-weight: 500; color: var(--ink-700);
+    padding: 6px 0;
+    border-bottom: 2px solid transparent;
+  }
+  .lnav__links a:hover { color: var(--brand-700); }
+  .lnav__cta { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative;
+    overflow: hidden;
+    padding: 80px 28px 60px;
+    background:
+      radial-gradient(900px 500px at 80% -10%, rgba(0,161,222,.15), transparent 60%),
+      radial-gradient(700px 400px at 0% 110%, rgba(31,157,85,.10), transparent 60%),
+      linear-gradient(180deg, #f8fafd 0%, #fff 100%);
+    border-bottom: 1px solid var(--ink-200);
+  }
+  .hero__inner {
+    max-width: 1200px; margin: 0 auto;
+    display: grid; grid-template-columns: 1.05fr 1fr; gap: 60px;
+    align-items: center;
+  }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 5px 12px 5px 6px;
+    background: #fff;
+    border: 1px solid var(--ink-200);
+    border-radius: 999px;
+    font-size: 12px; font-weight: 600; color: var(--ink-700);
+    box-shadow: var(--shadow-sm);
+  }
+  .eyebrow .pill {
+    background: var(--brand-700); color: #fff;
+    padding: 2px 8px; border-radius: 999px; font-size: 11px;
+  }
+  .hero h1 {
+    font-size: 56px; line-height: 1.05; letter-spacing: -.03em;
+    margin: 16px 0 18px;
+    font-weight: 800;
+    color: var(--ink-900);
+    text-wrap: balance;
+  }
+  .hero h1 em {
+    font-style: normal;
+    background: linear-gradient(135deg, var(--brand-700), var(--accent-blue));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .hero p.lead {
+    font-size: 17px; line-height: 1.55; color: var(--ink-600);
+    max-width: 540px; margin: 0 0 28px;
+    text-wrap: pretty;
+  }
+  .hero__cta { display: flex; gap: 12px; flex-wrap: wrap; }
+  .hero__trust {
+    margin-top: 36px;
+    display: flex; gap: 28px; flex-wrap: wrap;
+    font-size: 12.5px; color: var(--ink-500);
+  }
+  .hero__trust strong { color: var(--ink-900); font-weight: 700; font-size: 18px; display: block; }
+
+  /* Hero device mock */
+  .device {
+    position: relative;
+    background: #fff;
+    border: 1px solid var(--ink-200);
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    transform: rotate(-1deg);
+  }
+  .device::before {
+    content: "";
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent 60%, rgba(0,161,222,.05));
+    pointer-events: none;
+  }
+  .device__bar {
+    display: flex; align-items: center; gap: 6px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ink-200);
+    background: var(--ink-50);
+  }
+  .device__bar .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--ink-300); }
+  .device__bar .dot.r { background: #ff6058; }
+  .device__bar .dot.y { background: #ffbe2f; }
+  .device__bar .dot.g { background: #28c941; }
+  .device__bar .url {
+    margin-left: 14px; font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-500);
+  }
+  .device__body { padding: 18px; }
+
+  /* Mock receipt inside device */
+  .mock-recp {
+    background: #fff;
+    border-radius: 8px;
+    padding: 18px 20px;
+    box-shadow: 0 6px 30px -10px rgba(11,18,32,.18);
+    font-size: 12px;
+    color: var(--ink-800);
+  }
+  .mock-recp__hd { text-align: center; padding-bottom: 10px; border-bottom: 1px dashed var(--ink-300); margin-bottom: 10px; }
+  .mock-recp__hd b { display: block; font-size: 13px; }
+  .mock-recp__hd span { font-size: 11px; color: var(--ink-500); }
+  .mock-recp__line { display: flex; justify-content: space-between; padding: 3px 0; }
+  .mock-recp__total {
+    display: flex; justify-content: space-between;
+    padding-top: 8px; margin-top: 8px;
+    border-top: 1px dashed var(--ink-300);
+    font-weight: 700; font-size: 14px; color: var(--ink-900);
+  }
+  .mock-recp__sig {
+    margin-top: 12px; padding-top: 10px;
+    border-top: 1px dashed var(--ink-300);
+    font-family: var(--font-mono); font-size: 10.5px;
+    color: var(--ink-600); line-height: 1.4;
+  }
+  .mock-recp__qr {
+    margin-top: 10px; display: flex; gap: 12px; align-items: center;
+  }
+  .mock-recp__qr svg { width: 60px; height: 60px; flex: none; }
+  .mock-recp__rra {
+    text-align: center;
+    padding: 8px 0 0;
+    font-size: 10px; color: var(--ink-500);
+    text-transform: uppercase; letter-spacing: .1em;
+  }
+
+  /* Floating stat cards */
+  .float-card {
+    position: absolute; z-index: 2;
+    background: #fff; border: 1px solid var(--ink-200);
+    border-radius: 12px;
+    padding: 12px 14px;
+    box-shadow: var(--shadow-lg);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .float-card .icon-wrap {
+    width: 38px; height: 38px; border-radius: 9px;
+    display: grid; place-items: center;
+  }
+  .float-card { white-space: nowrap; }
+  .float-card .label { font-size: 11px; color: var(--ink-500); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+  .float-card .value { font-weight: 700; color: var(--ink-900); font-size: 14px; }
+  .float-1 { top: 6%; left: -36px; transform: rotate(-3deg); }
+  .float-2 { bottom: 8%; right: -28px; transform: rotate(2deg); }
+
+  /* ---------- Logos strip ---------- */
+  .logos {
+    max-width: 1200px; margin: 0 auto;
+    padding: 38px 28px 0;
+    text-align: center;
+  }
+  .logos__title {
+    font-size: 12px; letter-spacing: .14em; color: var(--ink-500);
+    text-transform: uppercase; font-weight: 600;
+  }
+  .logos__row {
+    margin-top: 18px;
+    display: flex; flex-wrap: wrap; gap: 36px; justify-content: center;
+    color: var(--ink-400);
+    font-weight: 700; letter-spacing: -.5px; font-size: 18px;
+  }
+  .logos__row span { padding: 4px 8px; }
+
+  /* ---------- Sections ---------- */
+  section.sec { padding: 90px 28px; }
+  section.sec .inner { max-width: 1200px; margin: 0 auto; }
+  .sec__hd { max-width: 720px; margin: 0 auto 48px; text-align: center; }
+  .sec__hd .eyebrow { margin-bottom: 14px; }
+  .sec__hd h2 {
+    font-size: 38px; line-height: 1.15; letter-spacing: -.025em; margin: 0 0 12px;
+    font-weight: 800; color: var(--ink-900);
+    text-wrap: balance;
+  }
+  .sec__hd p { color: var(--ink-600); font-size: 16px; margin: 0; line-height: 1.55; }
+
+  /* Features grid */
+  .feature-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;
+  }
+  .feature {
+    background: #fff;
+    border: 1px solid var(--ink-200);
+    border-radius: 14px;
+    padding: 22px 22px 24px;
+    transition: transform .2s, box-shadow .2s, border-color .2s;
+  }
+  .feature:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--brand-100);
+  }
+  .feature .ic {
+    width: 42px; height: 42px; border-radius: 10px;
+    display: grid; place-items: center;
+    margin-bottom: 14px;
+  }
+  .feature h3 { margin: 0 0 6px; font-size: 16px; font-weight: 700; color: var(--ink-900); }
+  .feature p { margin: 0; font-size: 13.5px; color: var(--ink-600); line-height: 1.55; }
+  .feature ul { margin: 12px 0 0; padding: 0 0 0 16px; font-size: 13px; color: var(--ink-600); }
+  .feature ul li { margin: 4px 0; }
+
+  /* Workflow */
+  .workflow { background: var(--ink-50); border-top: 1px solid var(--ink-200); border-bottom: 1px solid var(--ink-200); }
+  .flow-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+    counter-reset: step;
+  }
+  .step {
+    background: #fff;
+    border: 1px solid var(--ink-200);
+    border-radius: 14px;
+    padding: 22px 20px 24px;
+    position: relative;
+  }
+  .step::before {
+    counter-increment: step;
+    content: "0" counter(step);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--brand-700);
+    font-weight: 700;
+    background: var(--brand-100);
+    padding: 3px 9px; border-radius: 999px;
+    display: inline-block;
+    margin-bottom: 12px;
+  }
+  .step h4 { margin: 0 0 6px; font-size: 15px; font-weight: 700; color: var(--ink-900); }
+  .step p { margin: 0; font-size: 13px; color: var(--ink-600); line-height: 1.5; }
+
+  /* Showcase */
+  .showcase {
+    background: linear-gradient(180deg, #f8fafd 0%, #eef3fb 100%);
+    border-top: 1px solid var(--ink-200);
+    padding: 90px 28px;
+    overflow: hidden;
+  }
+  .showcase__inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 52px; align-items: center; }
+  .showcase__art {
+    background: var(--surface);
+    border: 1px solid var(--ink-200);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+  }
+  .showcase__art-hd {
+    padding: 14px 18px; border-bottom: 1px solid var(--ink-200);
+    display: flex; align-items: center; gap: 10px;
+    background: var(--ink-50);
+  }
+  .showcase__art-hd b { font-size: 13px; }
+  .ms-bar {
+    display: grid; grid-template-columns: 1fr; gap: 10px;
+    padding: 18px;
+  }
+  .stat-row {
+    display: grid; grid-template-columns: 130px 1fr 60px; align-items: center; gap: 12px;
+    font-size: 12.5px;
+  }
+  .stat-row .name { color: var(--ink-700); font-weight: 600; }
+  .stat-row .bar {
+    height: 8px; background: var(--ink-100); border-radius: 4px; overflow: hidden;
+  }
+  .stat-row .bar > i { display: block; height: 100%; border-radius: 4px; background: var(--brand-700); }
+  .stat-row .v { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-800); font-weight: 600; }
+  .ms-recents {
+    margin: 12px 18px 18px;
+    border-top: 1px solid var(--ink-200);
+    padding-top: 14px;
+  }
+  .ms-recents h5 { margin: 0 0 8px; font-size: 12px; color: var(--ink-500); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+  .ms-recents .row {
+    display: grid; grid-template-columns: 80px 1fr 90px 80px; gap: 12px;
+    padding: 8px 0; font-size: 12.5px;
+    border-top: 1px dashed var(--ink-200);
+  }
+  .ms-recents .row:first-of-type { border-top: 0; }
+  .ms-recents .row .id { font-family: var(--font-mono); color: var(--ink-600); }
+  .ms-recents .row .amt { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+
+  /* Compliance */
+  .compliance .inner { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+  .compliance h2 { font-size: 34px; line-height: 1.18; letter-spacing: -.022em; margin: 12px 0; font-weight: 800; }
+  .compliance p { font-size: 15px; color: var(--ink-600); line-height: 1.6; max-width: 520px; }
+  .check-list { margin: 20px 0 0; padding: 0; list-style: none; }
+  .check-list li {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--ink-200);
+    font-size: 14px; color: var(--ink-800);
+  }
+  .check-list li:last-child { border-bottom: 0; }
+  .check-list .ck {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: #dcfce7; color: var(--ok);
+    display: grid; place-items: center; flex: none;
+  }
+
+  .badge-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;
+  }
+  .badge {
+    background: #fff;
+    border: 1px solid var(--ink-200);
+    border-radius: 12px;
+    padding: 18px;
+  }
+  .badge .top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .badge .top .ic { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; }
+  .badge h4 { margin: 0; font-size: 14px; font-weight: 700; }
+  .badge p { margin: 0; font-size: 12.5px; color: var(--ink-500); line-height: 1.5; }
+
+  /* CTA Strip */
+  .cta-strip {
+    background:
+      radial-gradient(700px 400px at 100% 0%, rgba(255,255,255,.08), transparent 60%),
+      linear-gradient(135deg, var(--brand-900), var(--brand-700));
+    color: #fff;
+    border-radius: 20px;
+    padding: 52px 56px;
+    display: grid; grid-template-columns: 1.2fr auto; gap: 24px; align-items: center;
+    margin: 60px auto;
+    max-width: 1200px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-strip::before {
+    content: ""; position: absolute; right: -120px; top: -120px;
+    width: 320px; height: 320px;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-green));
+    border-radius: 50%;
+    filter: blur(60px); opacity: .35;
+  }
+  .cta-strip h2 { font-size: 30px; margin: 0 0 8px; font-weight: 800; letter-spacing: -.02em; line-height: 1.2; text-wrap: balance; }
+  .cta-strip p { margin: 0; font-size: 15px; color: rgba(255,255,255,.78); max-width: 540px; }
+  .cta-strip .btns { display: flex; gap: 10px; flex-wrap: wrap; position: relative; z-index: 1; }
+  .btn--white { background: #fff; color: var(--brand-900); border-color: #fff; }
+  .btn--white:hover { background: #f3f5f9; }
+  .btn--outline-w { background: transparent; color: #fff; border-color: rgba(255,255,255,.3); }
+  .btn--outline-w:hover { background: rgba(255,255,255,.08); }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--ink-200);
+    padding: 42px 28px 28px;
+    background: #fff;
+  }
+  footer .inner {
+    max-width: 1200px; margin: 0 auto;
+    display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 40px;
+  }
+  footer h5 { margin: 0 0 12px; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-500); font-weight: 700; }
+  footer ul { list-style: none; margin: 0; padding: 0; }
+  footer li { margin: 6px 0; font-size: 13.5px; color: var(--ink-700); }
+  footer li a:hover { color: var(--brand-700); }
+  .footer-brand p { color: var(--ink-600); font-size: 13.5px; line-height: 1.6; max-width: 320px; margin-top: 12px; }
+  .footer-bottom {
+    max-width: 1200px; margin: 32px auto 0;
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 18px;
+    border-top: 1px solid var(--ink-200);
+    font-size: 12.5px; color: var(--ink-500);
+  }
+
+  /* helpers */
+  .ic-blue { background: var(--brand-100); color: var(--brand-700); }
+  .ic-green { background: #dcfce7; color: var(--ok); }
+  .ic-amber { background: #fef3c7; color: #b45309; }
+  .ic-rose { background: #ffe4e6; color: #be123c; }
+  .ic-violet { background: #ede9fe; color: #6d28d9; }
+  .ic-cyan { background: #cffafe; color: #0e7490; }
+
+  @media (max-width: 960px) {
+    .hero__inner, .compliance .inner, .showcase__inner { grid-template-columns: 1fr; }
+    .feature-grid, .flow-grid, .badge-grid { grid-template-columns: 1fr 1fr; }
+    .hero h1 { font-size: 40px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Top nav -->
+<header class="lnav">
+  <div class="lnav__inner">
+    <a class="lnav__brand" href="Landing.html">
+      <span class="brand-mark">V</span>
+      <span>
+        <span class="brand-name">VSDC Manager</span>
+      </span>
+    </a>
+    <nav class="lnav__links">
+      <a href="#features">Features</a>
+      <a href="#workflow">How it works</a>
+      <a href="#compliance">Compliance</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#docs">Docs</a>
+    </nav>
+    <div class="lnav__cta">
+      <a class="btn btn--ghost btn--sm" href="Dashboard.html">Sign in</a>
+      <a class="btn btn--primary btn--sm" href="Dashboard.html">
+        Open dashboard
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+  </div>
+</header>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero__inner">
+    <div>
+      <span class="eyebrow">
+        <span class="pill">EBM 2.1</span>
+        Certified Invoicing System for RRA
+      </span>
+      <h1>Run your <em>billing & tax compliance</em> from one quiet dashboard.</h1>
+      <p class="lead">
+        VSDC Manager is the easiest way for Rwandan taxpayers to manage items,
+        register sales, sign invoices, reconcile purchases and stay perfectly
+        in sync with the Rwanda Revenue Authority — without ever leaving the browser.
+      </p>
+      <div class="hero__cta">
+        <a class="btn btn--primary btn--lg" href="Dashboard.html">
+          Open the dashboard
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a class="btn btn--lg" href="Invoice.html">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M9 13h6 M9 17h6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          See sample invoice
+        </a>
+      </div>
+
+      <div class="hero__trust">
+        <div><strong>9,400+</strong>Invoices signed daily</div>
+        <div><strong>1,250</strong>Active TINs onboarded</div>
+        <div><strong>99.98%</strong>Uptime to RRA EBM 2.1</div>
+      </div>
+    </div>
+
+    <!-- Right side device + receipt -->
+    <div style="position: relative;">
+      <div class="float-card float-1">
+        <div class="icon-wrap ic-green">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div>
+          <div class="label">Last invoice</div>
+          <div class="value">Signed in 184 ms</div>
+        </div>
+      </div>
+      <div class="float-card float-2">
+        <div class="icon-wrap ic-blue">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12 7 8l4 4 4-4 4 4M3 18l4-4 4 4 4-4 4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div>
+          <div class="label">Today's VAT (B)</div>
+          <div class="value">RWF 1,284,610</div>
+        </div>
+      </div>
+
+      <div class="device">
+        <div class="device__bar">
+          <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+          <span class="url">vsdc.local · /trnsSales/saveSales</span>
+        </div>
+        <div class="device__body" style="background: var(--ink-50);">
+          <div class="mock-recp">
+            <div class="mock-recp__hd">
+              <b>UMURAVA SUPERMARKET LTD</b>
+              <span>TIN 999991130 · KN 4 Ave, Kigali</span>
+            </div>
+            <div class="mock-recp__line"><span>Coca-Cola 50cl × 6</span><span>3,000</span></div>
+            <div class="mock-recp__line"><span>Bralirwa Mütze 65cl × 2</span><span>2,400</span></div>
+            <div class="mock-recp__line"><span>Inyange milk 1L × 4</span><span>5,200</span></div>
+            <div class="mock-recp__line"><span>Rice 25kg × 1</span><span>32,000</span></div>
+            <div class="mock-recp__line muted" style="color: var(--ink-500);"><span>Subtotal</span><span>42,600</span></div>
+            <div class="mock-recp__line muted" style="color: var(--ink-500);"><span>VAT 18% (B)</span><span>6,498</span></div>
+            <div class="mock-recp__total"><span>TOTAL</span><span>RWF 42,600</span></div>
+            <div class="mock-recp__sig">
+              <div>SDC INFO</div>
+              <div>SDC ID: SDC0010001</div>
+              <div>Receipt #: 0142 / NS</div>
+              <div>Internal data: G3RW-7BPA-9X12-0DE4</div>
+              <div>Signature: 9F4C-7821-A0BB-2D45</div>
+            </div>
+            <div class="mock-recp__qr">
+              <!-- QR placeholder -->
+              <svg viewBox="0 0 60 60" aria-hidden="true">
+                <rect width="60" height="60" fill="#fff"/>
+                <g fill="#0a1f3d">
+                  <rect x="2" y="2" width="14" height="14"/>
+                  <rect x="44" y="2" width="14" height="14"/>
+                  <rect x="2" y="44" width="14" height="14"/>
+                  <rect x="6" y="6" width="6" height="6" fill="#fff"/>
+                  <rect x="48" y="6" width="6" height="6" fill="#fff"/>
+                  <rect x="6" y="48" width="6" height="6" fill="#fff"/>
+                  <rect x="20" y="4" width="4" height="4"/>
+                  <rect x="26" y="4" width="4" height="4"/>
+                  <rect x="32" y="4" width="4" height="4"/>
+                  <rect x="20" y="20" width="4" height="4"/>
+                  <rect x="26" y="20" width="4" height="4"/>
+                  <rect x="32" y="20" width="4" height="4"/>
+                  <rect x="38" y="20" width="4" height="4"/>
+                  <rect x="20" y="26" width="4" height="4"/>
+                  <rect x="32" y="26" width="4" height="4"/>
+                  <rect x="44" y="26" width="4" height="4"/>
+                  <rect x="50" y="26" width="4" height="4"/>
+                  <rect x="20" y="32" width="4" height="4"/>
+                  <rect x="26" y="32" width="4" height="4"/>
+                  <rect x="38" y="32" width="4" height="4"/>
+                  <rect x="44" y="38" width="4" height="4"/>
+                  <rect x="20" y="44" width="4" height="4"/>
+                  <rect x="32" y="44" width="4" height="4"/>
+                  <rect x="44" y="50" width="4" height="4"/>
+                  <rect x="50" y="44" width="4" height="4"/>
+                  <rect x="26" y="50" width="4" height="4"/>
+                </g>
+              </svg>
+              <div style="font-size: 10.5px; color: var(--ink-500); line-height: 1.4;">
+                Scan to verify on RRA EBM portal — invoice 9F4C-7821-A0BB-2D45 issued 16 May 2026 14:03 CAT.
+              </div>
+            </div>
+            <div class="mock-recp__rra">— Rwanda Revenue Authority · EBM 2.1 —</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Logos -->
+<div class="logos">
+  <div class="logos__title">Trusted by retailers, wholesalers and pharmacies across Rwanda</div>
+  <div class="logos__row">
+    <span>UMURAVA</span><span>·</span>
+    <span>KIGALI MART</span><span>·</span>
+    <span>SIMBA SUPERMARKET</span><span>·</span>
+    <span>NAKUMATT RW</span><span>·</span>
+    <span>INTARE PHARMA</span>
+  </div>
+</div>
+
+<!-- Features -->
+<section class="sec" id="features">
+  <div class="inner">
+    <div class="sec__hd">
+      <span class="eyebrow">Built around the EBM 2.1 spec</span>
+      <h2>Every endpoint, every code, neatly tucked behind a calm UI.</h2>
+      <p>From device initialization to stock reconciliation, VSDC Manager covers the eight EBM 2.1 service categories and turns each one into a workflow your cashiers and accountants actually enjoy.</p>
+    </div>
+
+    <div class="feature-grid">
+      <div class="feature">
+        <div class="ic ic-blue">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        </div>
+        <h3>Item & product catalog</h3>
+        <p>Maintain SKUs with proper item classification, packaging unit, quantity unit and tax type — synced to the RRA item registry.</p>
+        <ul>
+          <li>10-digit RRA item classification picker</li>
+          <li>Tax types A / B / C / D auto-applied</li>
+          <li>Group prices L1–L5 for tiered customers</li>
+        </ul>
+      </div>
+
+      <div class="feature">
+        <div class="ic ic-green">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M9 13h6 M9 17h4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h3>Sales & invoice signing</h3>
+        <p>Build a basket, hit save, and the invoice comes back signed with internal data + signature data ready for the printed receipt.</p>
+        <ul>
+          <li>Normal, Copy, Training & Proforma receipts</li>
+          <li>Cash, card, mobile money, bank transfer</li>
+          <li>One-click cancel / refund flows</li>
+        </ul>
+      </div>
+
+      <div class="feature">
+        <div class="ic ic-amber">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18l-2 13H5L3 7z M8 7V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h3>Purchases & imports</h3>
+        <p>Pull purchase data your suppliers registered against your TIN, accept it, and merge customs declarations straight into your stock.</p>
+        <ul>
+          <li>Auto-fetch from /trnsPurchase/selectTrnsPurchaseSales</li>
+          <li>Customs declarations into items</li>
+          <li>Buyer-side acceptance signatures</li>
+        </ul>
+      </div>
+
+      <div class="feature">
+        <div class="ic ic-violet">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3-9 4 18 3-9h4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h3>Stock & inventory</h3>
+        <p>Stock master and stock IO sequences are first-class. Adjust, transfer between branches and watch the safety quantity light up.</p>
+      </div>
+
+      <div class="feature">
+        <div class="ic ic-cyan">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="4"/><path d="M3 21a6 6 0 0 1 12 0M16 3.13a4 4 0 0 1 0 7.75M21 21a6 6 0 0 0-3.5-5.45" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h3>Customers & branches</h3>
+        <p>Manage customer TINs, branch users and insurance partners (for pharmacies). Branch user accounts pushed via the EBM API.</p>
+      </div>
+
+      <div class="feature">
+        <div class="ic ic-rose">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-12V5l-8-3-8 3v5c0 8 8 12 8 12z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h3>Compliance, audited</h3>
+        <p>Every signed receipt is mirrored to RRA EBM 2.1 and kept locally for 24-hour offline tolerance with full audit trail and remote audit support.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Workflow -->
+<section class="sec workflow" id="workflow">
+  <div class="inner">
+    <div class="sec__hd">
+      <span class="eyebrow">From WAR file to printed receipt</span>
+      <h2>Four steps, no surprises.</h2>
+      <p>Once your VSDC WAR is deployed locally and the device is initialized, the rest is workflow — not engineering.</p>
+    </div>
+
+    <div class="flow-grid">
+      <div class="step">
+        <h4>Initialize device</h4>
+        <p>Apply with RRA, deploy the WAR, then call <code style="font-family: var(--font-mono); font-size: 12px; background: var(--ink-100); padding: 1px 5px; border-radius: 4px;">/initializer/selectInitInfo</code> with your TIN, branch ID and device serial. Keys are pulled from EBM and saved.</p>
+      </div>
+      <div class="step">
+        <h4>Load codes & items</h4>
+        <p>Pull the standard code list, item classification, branch list and customer TINs. Register your products with their tax type and unit price.</p>
+      </div>
+      <div class="step">
+        <h4>Register sales</h4>
+        <p>Build a basket. Save the sales transaction, then save the invoice — VSDC returns the receipt number, internal data and signature.</p>
+      </div>
+      <div class="step">
+        <h4>Reconcile & report</h4>
+        <p>Confirm purchases registered against your TIN, adjust stock IO, push the new stock master and you're balanced for the day.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Showcase -->
+<section class="showcase">
+  <div class="showcase__inner">
+    <div>
+      <span class="eyebrow">Live operations</span>
+      <h2 style="font-size: 36px; line-height: 1.18; letter-spacing: -.022em; margin: 14px 0 14px; font-weight: 800;">A dashboard your accountant can actually read on Monday morning.</h2>
+      <p style="color: var(--ink-600); font-size: 15px; line-height: 1.6;">
+        Tax type breakdown, top items, signed-vs-pending invoices, branch performance and the
+        VSDC heartbeat — all in one calm screen designed for finance, not for engineers.
+      </p>
+      <div style="margin-top: 22px; display: flex; gap: 10px;">
+        <a class="btn btn--primary" href="Dashboard.html">Open dashboard</a>
+        <a class="btn" href="Items.html">Browse items</a>
+      </div>
+    </div>
+
+    <div class="showcase__art">
+      <div class="showcase__art-hd">
+        <div class="brand-mark" style="width: 26px; height: 26px; font-size: 11px;">V</div>
+        <b>Today · 02 May 2026</b>
+        <span class="chip chip--ok" style="margin-left: auto;">VSDC online</span>
+      </div>
+      <div class="ms-bar">
+        <div class="stat-row">
+          <span class="name">Tax B (18%)</span>
+          <span class="bar"><i style="width: 78%; background: var(--brand-700);"></i></span>
+          <span class="v">RWF 1.28M</span>
+        </div>
+        <div class="stat-row">
+          <span class="name">Tax C (0%)</span>
+          <span class="bar"><i style="width: 38%; background: var(--ok);"></i></span>
+          <span class="v">RWF 612K</span>
+        </div>
+        <div class="stat-row">
+          <span class="name">Tax A (Exempt)</span>
+          <span class="bar"><i style="width: 22%; background: #6d28d9;"></i></span>
+          <span class="v">RWF 354K</span>
+        </div>
+        <div class="stat-row">
+          <span class="name">Tax D (Non-VAT)</span>
+          <span class="bar"><i style="width: 12%; background: var(--warn);"></i></span>
+          <span class="v">RWF 192K</span>
+        </div>
+      </div>
+      <div class="ms-recents">
+        <h5>Last signed invoices</h5>
+        <div class="row"><span class="id">INV-0142</span><span>Umurava Supermarket</span><span>VAT B</span><span class="amt">42,600</span></div>
+        <div class="row"><span class="id">INV-0141</span><span>Walk-in customer</span><span>VAT B</span><span class="amt">12,800</span></div>
+        <div class="row"><span class="id">INV-0140</span><span>Bralirwa Wholesale</span><span>VAT C</span><span class="amt">218,000</span></div>
+        <div class="row"><span class="id">INV-0139</span><span>Intare Pharma</span><span>VAT A</span><span class="amt">8,400</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Compliance -->
+<section class="sec compliance" id="compliance">
+  <div class="inner">
+    <div>
+      <span class="eyebrow">RRA compliance, by default</span>
+      <h2>Built strictly to the VSDC v1.0.5 specification.</h2>
+      <p>Every endpoint, every code list, every required attribute. The VSDC WAR runs locally; we just give you a clean way to drive it.</p>
+      <ul class="check-list">
+        <li>
+          <span class="ck">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          All eight EBM 2.1 service categories implemented end-to-end.
+        </li>
+        <li>
+          <span class="ck">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          24-hour offline tolerance with automatic resync on reconnection.
+        </li>
+        <li>
+          <span class="ck">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          MRC-ready: cash registers and POS systems both supported.
+        </li>
+        <li>
+          <span class="ck">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          All RRA response codes (000–884) surfaced with human-readable hints.
+        </li>
+      </ul>
+    </div>
+
+    <div class="badge-grid">
+      <div class="badge">
+        <div class="top">
+          <div class="ic ic-blue"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-12V5l-8-3-8 3v5c0 8 8 12 8 12z" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <h4>RRA EBM 2.1</h4>
+        </div>
+        <p>Certified Invoicing System aligned with the March 2018 technical specification.</p>
+      </div>
+      <div class="badge">
+        <div class="top">
+          <div class="ic ic-green"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l5 5L21 4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <h4>VSDC v1.0.5</h4>
+        </div>
+        <p>Latest spec including <code style="font-family: var(--font-mono); font-size: 11.5px;">prcOrdCd</code> and result codes 881–884.</p>
+      </div>
+      <div class="badge">
+        <div class="top">
+          <div class="ic ic-amber"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3" stroke-linecap="round"/></svg></div>
+          <h4>Real-time</h4>
+        </div>
+        <p>Median signature round-trip under 200 ms on a normal 4G connection.</p>
+      </div>
+      <div class="badge">
+        <div class="top">
+          <div class="ic ic-violet"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-linecap="round"/></svg></div>
+          <h4>Locally hosted</h4>
+        </div>
+        <p>The VSDC WAR sits on your own server — your sales data never leaves your premises.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-strip" id="pricing">
+  <div>
+    <h2>Get your VSDC online before tea time.</h2>
+    <p>Already have RRA approval? Drop the WAR on your server, log in here, and we'll walk you through device initialization, code sync and your first signed receipt — usually under 30 minutes.</p>
+  </div>
+  <div class="btns">
+    <a class="btn btn--white btn--lg" href="Dashboard.html">Open dashboard</a>
+    <a class="btn btn--outline-w btn--lg" href="#docs">Read the docs</a>
+  </div>
+</div>
+
+<footer id="docs">
+  <div class="inner">
+    <div class="footer-brand">
+      <div class="lnav__brand">
+        <span class="brand-mark">V</span>
+        <span class="brand-name" style="color: var(--ink-900);">VSDC Manager</span>
+      </div>
+      <p>An independent management UI for RRA-approved Virtual Sales Data Controllers. Not affiliated with the Rwanda Revenue Authority.</p>
+    </div>
+    <div>
+      <h5>Product</h5>
+      <ul>
+        <li><a href="Dashboard.html">Dashboard</a></li>
+        <li><a href="Items.html">Items</a></li>
+        <li><a href="Invoice.html">Invoices</a></li>
+        <li><a href="Purchases.html">Purchases</a></li>
+        <li><a href="Stock.html">Stock</a></li>
+      </ul>
+    </div>
+    <div>
+      <h5>Compliance</h5>
+      <ul>
+        <li><a href="#">VSDC v1.0.5 spec</a></li>
+        <li><a href="#">EBM 2.1 reference</a></li>
+        <li><a href="#">Response codes</a></li>
+        <li><a href="#">Item classification</a></li>
+      </ul>
+    </div>
+    <div>
+      <h5>Support</h5>
+      <ul>
+        <li><a href="#">Onboarding guide</a></li>
+        <li><a href="#">Status page</a></li>
+        <li><a href="#">Contact us</a></li>
+        <li><a href="#">Changelog</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 VSDC Manager · Kigali, Rwanda</span>
+    <span>v1.0.5 · Last sync 02 May 2026, 14:03 CAT</span>
+  </div>
+</footer>
+
+</body>
+</html>

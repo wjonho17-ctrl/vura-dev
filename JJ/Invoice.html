@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sales & Invoices · VSDC Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/app.css">
+<style>
+  .invoice-layout { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; }
+  .basket-card { display: flex; flex-direction: column; }
+  .basket-row {
+    display: grid; grid-template-columns: 36px 1fr 90px 110px 80px 110px 32px;
+    gap: 10px; align-items: center;
+    padding: 10px 16px;
+    border-top: 1px solid var(--ink-100);
+  }
+  .basket-row:first-of-type { border-top: 0; }
+  .basket-row .thumb {
+    width: 32px; height: 32px; border-radius: 7px;
+    display: grid; place-items: center; font-weight: 700; font-size: 12px;
+    background: var(--ink-100); color: var(--ink-700);
+  }
+  .basket-row .nm b { display: block; font-weight: 600; color: var(--ink-900); font-size: 13.5px; }
+  .basket-row .nm span { font-size: 11.5px; color: var(--ink-500); font-family: var(--font-mono); }
+  .qty-input {
+    display: inline-flex; align-items: center;
+    border: 1px solid var(--ink-300); border-radius: 7px;
+    overflow: hidden; background: #fff;
+  }
+  .qty-input button { width: 26px; height: 28px; border: 0; background: transparent; color: var(--ink-700); }
+  .qty-input button:hover { background: var(--ink-100); }
+  .qty-input input { width: 38px; height: 28px; border: 0; outline: 0; text-align: center; font-variant-numeric: tabular-nums; font-size: 13px; }
+  .basket-row .price input { width: 90px; }
+  .basket-row .total { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--ink-900); }
+  .x-btn { width: 28px; height: 28px; border-radius: 6px; border: 0; background: transparent; color: var(--ink-500); }
+  .x-btn:hover { background: #fee2e2; color: var(--err); }
+  .add-line {
+    padding: 12px 16px;
+    display: flex; gap: 10px; align-items: center;
+    border-top: 1px dashed var(--ink-200);
+  }
+  .add-line .field { flex: 1; }
+
+  .totals {
+    padding: 16px 20px;
+    border-top: 1px solid var(--ink-200);
+    background: var(--ink-50);
+  }
+  .totals .row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
+  .totals .row.grand { font-size: 18px; font-weight: 700; color: var(--ink-900); padding-top: 10px; margin-top: 6px; border-top: 1px solid var(--ink-200); }
+  .totals .v { font-variant-numeric: tabular-nums; }
+
+  /* Receipt preview */
+  .receipt-card { background: var(--surface); border: 1px solid var(--ink-200); border-radius: var(--radius-lg); padding: 0; overflow: hidden; }
+  .receipt-card__hd {
+    padding: 14px 18px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--ink-200);
+    background: var(--ink-50);
+  }
+  .receipt-card__hd h3 { margin: 0; font-size: 14px; font-weight: 600; }
+  .receipt {
+    padding: 22px 28px 26px;
+    background: #fff;
+    font-size: 12.5px;
+    color: var(--ink-800);
+    line-height: 1.55;
+  }
+  .receipt h4 { margin: 0; text-align: center; font-size: 14px; font-weight: 700; letter-spacing: -.01em; }
+  .receipt .biz { text-align: center; font-size: 11.5px; color: var(--ink-600); margin-top: 2px; }
+  .receipt hr { border: 0; border-top: 1px dashed var(--ink-300); margin: 10px 0; }
+  .receipt .ln { display: flex; justify-content: space-between; }
+  .receipt .it { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; padding: 2px 0; font-family: var(--font-mono); font-size: 11.5px; }
+  .receipt .it .qp { color: var(--ink-500); }
+  .receipt .it .tt { font-weight: 700; color: var(--ink-900); }
+  .receipt .total {
+    display: flex; justify-content: space-between;
+    margin-top: 8px; padding-top: 8px;
+    border-top: 1px dashed var(--ink-300);
+    font-weight: 700; font-size: 15px; color: var(--ink-900);
+  }
+  .receipt .sig {
+    margin-top: 12px; padding-top: 10px;
+    border-top: 1px dashed var(--ink-300);
+    font-family: var(--font-mono); font-size: 10.5px;
+    color: var(--ink-700); line-height: 1.55;
+  }
+  .receipt .qr-wrap { margin-top: 12px; display: flex; gap: 12px; align-items: center; }
+  .receipt .qr-wrap svg { flex: none; }
+  .receipt .footer { text-align: center; margin-top: 12px; font-size: 10.5px; text-transform: uppercase; letter-spacing: .12em; color: var(--ink-500); }
+
+  /* Sales table on top */
+  .sales-table-card { margin-bottom: 18px; }
+
+  .toolbar-row {
+    display: flex; gap: 12px; align-items: center; padding: 14px 20px;
+    border-bottom: 1px solid var(--ink-200);
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <a class="sidebar__brand" href="Landing.html">
+      <span class="brand-mark">V</span>
+      <span><span class="brand-name">VSDC Manager</span><span class="brand-sub">EBM 2.1 · v1.0.5</span></span>
+    </a>
+    <div class="sidebar__section">Overview</div>
+    <nav class="nav">
+      <a class="nav__item" href="Dashboard.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Dashboard</a>
+      <a class="nav__item is-active" href="Invoice.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M9 13h6 M9 17h4" stroke-linecap="round"/></svg>Sales & Invoices<span class="nav__badge">142</span></a>
+      <a class="nav__item" href="Items.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Items & Products</a>
+      <a class="nav__item" href="Purchases.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18l-2 13H5L3 7z M8 7V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3" stroke-linecap="round"/></svg>Purchases</a>
+      <a class="nav__item" href="Stock.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8 12 3 3 8l9 5 9-5z" stroke-linecap="round"/></svg>Stock & Inventory</a>
+      <a class="nav__item" href="Imports.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12 m-5-5 5 5 5-5 M5 21h14" stroke-linecap="round"/></svg>Imports</a>
+    </nav>
+    <div class="sidebar__section">Master data</div>
+    <nav class="nav">
+      <a class="nav__item" href="Customers.html">Customers</a>
+      <a class="nav__item" href="#">Branches</a>
+      <a class="nav__item" href="#">Code lists</a>
+    </nav>
+    <div class="sidebar__device">
+      <div class="device-card">
+        <div class="device-card__row"><span>VSDC status</span><b class="device-card__pulse">Online</b></div>
+        <div class="device-card__row"><span>TIN</span><b>999991130</b></div>
+        <div class="device-card__row"><span>Last sync</span><b>14:03 CAT</b></div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="search">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>
+        <input placeholder="Search invoices, customers, signatures…" />
+        <span class="kbd">⌘K</span>
+      </div>
+      <div class="topbar__actions">
+        <button class="icon-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke-linecap="round"/></svg><span class="dot"></span></button>
+        <div class="user-pill"><div class="avatar">UM</div><div><div class="user-pill__name">Umurava Admin</div><div class="user-pill__role">Head office · Kigali</div></div></div>
+      </div>
+    </div>
+
+    <div class="page">
+      <div class="page-head">
+        <div>
+          <div class="crumbs"><span>Workspace</span><span>·</span><span>Sales & Invoices</span><span>·</span><span>New invoice</span></div>
+          <h1>Generate invoice</h1>
+        </div>
+        <div class="page-head__actions">
+          <button class="btn">Discard</button>
+          <button class="btn">Save as draft</button>
+        </div>
+      </div>
+
+      <!-- Sales list mini -->
+      <div class="card sales-table-card">
+        <div class="toolbar-row">
+          <div class="tab-bar">
+            <button class="is-active">Today (142)</button>
+            <button>This week (986)</button>
+            <button>This month (4,210)</button>
+            <button>All</button>
+          </div>
+          <div class="field">
+            <span>Status</span>
+            <select><option>All</option><option>Approved (02)</option><option>Wait for approval</option><option>Cancelled</option><option>Refunded</option></select>
+          </div>
+          <div class="field">
+            <span>Type</span>
+            <select><option>All</option><option>S · Sale</option><option>R · Refund</option><option>T · Training</option><option>P · Proforma</option></select>
+          </div>
+          <button class="btn" style="margin-left: auto;">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M7 10l5 5 5-5 M12 15V3" stroke-linecap="round"/></svg>
+            Export
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table class="data">
+            <thead>
+              <tr>
+                <th>Invoice #</th>
+                <th>Issued</th>
+                <th>Customer</th>
+                <th>Type</th>
+                <th>Tax</th>
+                <th class="num">Total</th>
+                <th>Signature</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="mono"><a class="linkish">INV-0142</a></td>
+                <td>02 May, 14:03</td>
+                <td>Umurava Supermarket<div class="muted-stack">TIN 999991130</div></td>
+                <td><span class="chip chip--plain">S · Normal</span></td>
+                <td><span class="tax-chip tax-B">B 18%</span></td>
+                <td class="num"><b>RWF 42,600</b></td>
+                <td class="mono muted">9F4C-7821-A0BB-2D45</td>
+                <td><span class="chip chip--ok">Signed</span></td>
+                <td class="cell-actions"><button class="btn btn--ghost btn--sm">View</button></td>
+              </tr>
+              <tr>
+                <td class="mono"><a class="linkish">INV-0141</a></td>
+                <td>02 May, 13:58</td>
+                <td>Walk-in customer<div class="muted-stack">—</div></td>
+                <td><span class="chip chip--plain">S · Normal</span></td>
+                <td><span class="tax-chip tax-B">B 18%</span></td>
+                <td class="num"><b>RWF 12,800</b></td>
+                <td class="mono muted">3D2A-1F90-4C77-EE08</td>
+                <td><span class="chip chip--ok">Signed</span></td>
+                <td class="cell-actions"><button class="btn btn--ghost btn--sm">View</button></td>
+              </tr>
+              <tr>
+                <td class="mono"><a class="linkish">INV-0140</a></td>
+                <td>02 May, 13:42</td>
+                <td>Bralirwa Wholesale<div class="muted-stack">TIN 999992007</div></td>
+                <td><span class="chip chip--plain">S · Normal</span></td>
+                <td><span class="tax-chip tax-C">C Zero</span></td>
+                <td class="num"><b>RWF 218,000</b></td>
+                <td class="mono muted">A1B2-C3D4-7E55-90FF</td>
+                <td><span class="chip chip--ok">Signed</span></td>
+                <td class="cell-actions"><button class="btn btn--ghost btn--sm">View</button></td>
+              </tr>
+              <tr>
+                <td class="mono"><a class="linkish">INV-0139</a></td>
+                <td>02 May, 13:26</td>
+                <td>Intare Pharma<div class="muted-stack">TIN 100110263</div></td>
+                <td><span class="chip chip--plain">S · Normal</span></td>
+                <td><span class="tax-chip tax-A">A Exempt</span></td>
+                <td class="num"><b>RWF 8,400</b></td>
+                <td class="mono muted">6610-2D9C-44A1-CF02</td>
+                <td><span class="chip chip--ok">Signed</span></td>
+                <td class="cell-actions"><button class="btn btn--ghost btn--sm">View</button></td>
+              </tr>
+              <tr>
+                <td class="mono"><a class="linkish">INV-0138</a></td>
+                <td>02 May, 13:11</td>
+                <td>Kigali Mart Branch<div class="muted-stack">TIN 999992455</div></td>
+                <td><span class="chip chip--plain">R · Refund</span></td>
+                <td><span class="tax-chip tax-B">B 18%</span></td>
+                <td class="num"><b style="color: var(--err);">- RWF 5,200</b></td>
+                <td class="mono muted">B0F1-2455-8821-EEAA</td>
+                <td><span class="chip chip--info">Refunded</span></td>
+                <td class="cell-actions"><button class="btn btn--ghost btn--sm">View</button></td>
+              </tr>
+              <tr>
+                <td class="mono"><a class="linkish">INV-0137</a></td>
+                <td>02 May, 12:48</td>
+                <td>RRA Test Account<div class="muted-stack">TIN 999999992</div></td>
+                <td><span class="chip chip--plain">T · Training</span></td>
+                <td><span class="tax-chip tax-D">D Non-VAT</span></td>
+                <td class="num"><b>RWF 1,000</b></td>
+                <td class="mono muted">— pending —</td>
+                <td><span class="chip chip--warn">Wait approval</span></td>
+                <td class="cell-actions"><button class="btn btn--ghost btn--sm">View</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Generator -->
+      <div class="invoice-layout">
+        <!-- LEFT: basket + form -->
+        <div class="card basket-card">
+          <div class="card__head">
+            <div>
+              <h3>New invoice · Draft INV-0143</h3>
+              <p>Will be signed via /trnsSales/saveSales</p>
+            </div>
+            <div class="tab-bar">
+              <button class="is-active">Sale</button>
+              <button>Refund</button>
+              <button>Training</button>
+              <button>Proforma</button>
+            </div>
+          </div>
+
+          <div style="padding: 16px 20px; border-bottom: 1px solid var(--ink-200);">
+            <div class="form-grid form-grid--3">
+              <div class="form-row">
+                <label>Customer TIN</label>
+                <input class="input input--mono" value="100110263" />
+              </div>
+              <div class="form-row">
+                <label>Customer name</label>
+                <input class="input" value="Intare Pharma Ltd" />
+              </div>
+              <div class="form-row">
+                <label>Customer mobile</label>
+                <input class="input input--mono" placeholder="07X XXX XXXX" value="0788 123 456" />
+              </div>
+              <div class="form-row">
+                <label>Receipt type</label>
+                <select class="select"><option>S · Sale receipt</option><option>R · Refund</option><option>T · Training</option><option>P · Proforma</option></select>
+              </div>
+              <div class="form-row">
+                <label>Payment method</label>
+                <select class="select"><option>01 · Cash</option><option>02 · Card</option><option>03 · Mobile money</option><option>04 · Bank transfer</option><option>05 · Cheque</option></select>
+              </div>
+              <div class="form-row">
+                <label>Purchase order code</label>
+                <input class="input input--mono" placeholder="prcOrdCd" value="PO-2026-0421" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Basket -->
+          <div>
+            <div class="basket-row" style="font-size: 11px; color: var(--ink-500); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; padding-top: 12px; padding-bottom: 6px;">
+              <div></div><div>Item</div><div>Qty</div><div>Unit price</div><div>Tax</div><div style="text-align: right;">Total</div><div></div>
+            </div>
+
+            <div class="basket-row">
+              <div class="thumb">CC</div>
+              <div class="nm"><b>Coca-Cola 50cl PET</b><span>RW2AMXBLL0000001</span></div>
+              <div>
+                <div class="qty-input">
+                  <button>−</button><input value="6"/><button>+</button>
+                </div>
+              </div>
+              <div class="price"><input class="input input--mono" value="500"/></div>
+              <div><span class="tax-chip tax-B">B 18%</span></div>
+              <div class="total">3,000</div>
+              <div><button class="x-btn">×</button></div>
+            </div>
+
+            <div class="basket-row">
+              <div class="thumb" style="background: #fef3c7; color: #b45309;">BR</div>
+              <div class="nm"><b>Bralirwa Mütze 65cl</b><span>RW2AMXBLL0000018</span></div>
+              <div>
+                <div class="qty-input">
+                  <button>−</button><input value="2"/><button>+</button>
+                </div>
+              </div>
+              <div class="price"><input class="input input--mono" value="1200"/></div>
+              <div><span class="tax-chip tax-B">B 18%</span></div>
+              <div class="total">2,400</div>
+              <div><button class="x-btn">×</button></div>
+            </div>
+
+            <div class="basket-row">
+              <div class="thumb" style="background: #dcfce7; color: var(--ok);">IY</div>
+              <div class="nm"><b>Inyange whole milk 1L</b><span>RW1NTXU0000044</span></div>
+              <div>
+                <div class="qty-input">
+                  <button>−</button><input value="4"/><button>+</button>
+                </div>
+              </div>
+              <div class="price"><input class="input input--mono" value="1300"/></div>
+              <div><span class="tax-chip tax-A">A Exempt</span></div>
+              <div class="total">5,200</div>
+              <div><button class="x-btn">×</button></div>
+            </div>
+
+            <div class="basket-row">
+              <div class="thumb" style="background: #ede9fe; color: #6d28d9;">RZ</div>
+              <div class="nm"><b>Rice (Mukamira) 25kg</b><span>RW1NTXU0000091</span></div>
+              <div>
+                <div class="qty-input">
+                  <button>−</button><input value="1"/><button>+</button>
+                </div>
+              </div>
+              <div class="price"><input class="input input--mono" value="32000"/></div>
+              <div><span class="tax-chip tax-A">A Exempt</span></div>
+              <div class="total">32,000</div>
+              <div><button class="x-btn">×</button></div>
+            </div>
+          </div>
+
+          <div class="add-line">
+            <div class="field field--grow">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>
+              <input placeholder="Scan barcode or search item to add…"/>
+            </div>
+            <button class="btn">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+              Add manual line
+            </button>
+          </div>
+
+          <!-- Totals -->
+          <div class="totals">
+            <div class="row"><span>Subtotal (4 items)</span><span class="v">RWF 42,600</span></div>
+            <div class="row"><span>Discount (0%)</span><span class="v">- RWF 0</span></div>
+            <div class="row"><span>Taxable A · Exempt</span><span class="v">RWF 37,200</span></div>
+            <div class="row"><span>Taxable B · 18%</span><span class="v">RWF 5,400</span></div>
+            <div class="row"><span>VAT collected</span><span class="v">RWF 824</span></div>
+            <div class="row grand"><span>Total to charge</span><span class="v">RWF 42,600</span></div>
+          </div>
+
+          <div style="padding: 14px 20px; border-top: 1px solid var(--ink-200); display: flex; gap: 8px; justify-content: space-between; align-items: center;">
+            <span class="chip chip--info">VSDC will sign on save · est. 184 ms</span>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn">Hold</button>
+              <button class="btn btn--primary btn--lg">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Sign & print receipt
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: live receipt preview -->
+        <div>
+          <div class="receipt-card">
+            <div class="receipt-card__hd">
+              <h3>Receipt preview</h3>
+              <span class="chip chip--brand">Live</span>
+            </div>
+            <div class="receipt">
+              <h4>UMURAVA SUPERMARKET LTD</h4>
+              <div class="biz">TIN 999991130 · MRC RW1NTX0010001<br>KN 4 Ave, Kimihurura, Kigali</div>
+              <div class="biz" style="margin-top: 4px;">02 May 2026, 14:03 CAT</div>
+              <hr/>
+              <div class="ln"><span>Receipt #</span><b>0143 / NS</b></div>
+              <div class="ln"><span>Customer</span><span>Intare Pharma Ltd</span></div>
+              <div class="ln"><span>TIN</span><span>100110263</span></div>
+              <div class="ln"><span>P.O.</span><span>PO-2026-0421</span></div>
+              <hr/>
+              <div class="it"><span>Coca-Cola 50cl × 6</span><span class="qp">B</span><span class="tt">3,000</span></div>
+              <div class="it"><span>Bralirwa Mütze 65cl × 2</span><span class="qp">B</span><span class="tt">2,400</span></div>
+              <div class="it"><span>Inyange milk 1L × 4</span><span class="qp">A</span><span class="tt">5,200</span></div>
+              <div class="it"><span>Rice 25kg × 1</span><span class="qp">A</span><span class="tt">32,000</span></div>
+              <hr/>
+              <div class="ln"><span>Taxable A</span><span>37,200</span></div>
+              <div class="ln"><span>Taxable B (18%)</span><span>5,400</span></div>
+              <div class="ln"><span>VAT B</span><span>824</span></div>
+              <div class="total"><span>TOTAL</span><span>RWF 42,600</span></div>
+              <div class="ln" style="margin-top: 6px; color: var(--ink-600);"><span>Paid · Mobile money</span><span>42,600</span></div>
+              <div class="sig">
+                <div>SDC INFO</div>
+                <div>SDC ID: SDC0010001</div>
+                <div>Internal data: G3RW-7BPA-9X12-0DE4</div>
+                <div>Signature: 9F4C-7821-A0BB-2D45</div>
+                <div>Invoice #: INV-0143</div>
+              </div>
+              <div class="qr-wrap">
+                <svg viewBox="0 0 60 60" width="64" height="64" aria-hidden="true">
+                  <rect width="60" height="60" fill="#fff"/>
+                  <g fill="#0a1f3d">
+                    <rect x="2" y="2" width="14" height="14"/><rect x="44" y="2" width="14" height="14"/><rect x="2" y="44" width="14" height="14"/>
+                    <rect x="6" y="6" width="6" height="6" fill="#fff"/><rect x="48" y="6" width="6" height="6" fill="#fff"/><rect x="6" y="48" width="6" height="6" fill="#fff"/>
+                    <rect x="20" y="4" width="4" height="4"/><rect x="26" y="4" width="4" height="4"/><rect x="32" y="4" width="4" height="4"/>
+                    <rect x="20" y="20" width="4" height="4"/><rect x="26" y="20" width="4" height="4"/><rect x="32" y="20" width="4" height="4"/>
+                    <rect x="38" y="20" width="4" height="4"/><rect x="20" y="26" width="4" height="4"/>
+                    <rect x="32" y="26" width="4" height="4"/><rect x="44" y="26" width="4" height="4"/>
+                    <rect x="50" y="26" width="4" height="4"/><rect x="20" y="32" width="4" height="4"/><rect x="26" y="32" width="4" height="4"/>
+                    <rect x="38" y="32" width="4" height="4"/><rect x="44" y="38" width="4" height="4"/>
+                    <rect x="20" y="44" width="4" height="4"/><rect x="32" y="44" width="4" height="4"/><rect x="44" y="50" width="4" height="4"/>
+                    <rect x="50" y="44" width="4" height="4"/><rect x="26" y="50" width="4" height="4"/>
+                  </g>
+                </svg>
+                <div style="font-size: 10.5px; color: var(--ink-600); line-height: 1.5;">
+                  Scan to verify on the RRA EBM portal. The receipt is invalid without internal data + signature.
+                </div>
+              </div>
+              <div class="footer">— Rwanda Revenue Authority · EBM 2.1 —</div>
+            </div>
+          </div>
+
+          <!-- Tiny side card -->
+          <div class="card" style="margin-top: 18px;">
+            <div class="card__head">
+              <div><h3>VSDC payload preview</h3><p>About to be POSTed</p></div>
+              <span class="chip chip--plain">JSON</span>
+            </div>
+            <pre style="margin: 0; padding: 16px 20px; font-family: var(--font-mono); font-size: 11.5px; line-height: 1.6; color: var(--ink-700); overflow: auto; max-height: 240px; background: var(--ink-50); border-top: 1px solid var(--ink-200);">{
+  "tin": "999991130",
+  "bhfId": "00",
+  "invcNo": 143,
+  "custTin": "100110263",
+  "custNm": "Intare Pharma Ltd",
+  "salesTyCd": "N",
+  "rcptTyCd": "S",
+  "pmtTyCd": "03",
+  "salesSttsCd": "02",
+  "prcOrdCd": "PO-2026-0421",
+  "salesDt": "20260502",
+  "totItemCnt": 4,
+  "taxblAmtA": 37200,
+  "taxblAmtB": 5400,
+  "taxRtB": 18,
+  "taxAmtB": 824,
+  "totAmt": 42600,
+  "itemList": [ … 4 lines … ]
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

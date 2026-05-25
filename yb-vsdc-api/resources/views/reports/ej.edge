@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>{{title || 'Electronic Journal - CIS'}}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-size: 10pt; }
+    body { font-family: 'Courier New', Courier, monospace; margin: 20pt; color: #000; }
+    h1 { text-align: center; margin-bottom: 20pt; font-size: 16pt; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #000; padding: 4pt; text-align: left; }
+    th { background-color: #eee; }
+    .footer { margin-top: 30pt; text-align: center; font-size: 8pt; }
+    @media print { #printBtn { display: none; } }
+    button#printBtn { display: block; margin: 10pt auto; padding: 5pt 10pt; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Electronic Journal (EJ)</h1>
+  <p style="text-align:center;">Period: {{dateTime}}</p>
+  
+  <button id="printBtn" onclick="window.print()">Print Journal</button>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Inv No</th>
+        <th>Type</th>
+        <th>Customer</th>
+        <th>Total Amount</th>
+        <th>EBM Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      @each(sale in sales)
+      <tr>
+        <td>{{ sale.createdAt.toFormat('dd/MM HH:mm') }}</td>
+        <td>{{ sale.invoiceNumber }}</td>
+        <td>{{ sale.invoiceType }}</td>
+        <td>{{ sale.customerName || 'N/A' }}</td>
+        <td>{{ sale.totalAmount.toLocaleString() }}</td>
+        <td>{{ sale.ebmReceiptNo ? 'Synced: ' + sale.ebmReceiptNo : 'Local' }}</td>
+      </tr>
+      @end
+    </tbody>
+  </table>
+
+  <div class="footer">
+    EJ Export - CIS v{{auth.user.cisApiVersion}} - Generated at {{ new Date().toLocaleString() }}
+  </div>
+</body>
+</html>

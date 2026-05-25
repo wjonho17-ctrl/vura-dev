@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Customers · VSDC Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/app.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <a class="sidebar__brand" href="Landing.html"><span class="brand-mark">V</span><span><span class="brand-name">VSDC Manager</span><span class="brand-sub">EBM 2.1 · v1.0.5</span></span></a>
+    <div class="sidebar__section">Overview</div>
+    <nav class="nav">
+      <a class="nav__item" href="Dashboard.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Dashboard</a>
+      <a class="nav__item" href="Invoice.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6" stroke-linecap="round"/></svg>Sales & Invoices<span class="nav__badge">142</span></a>
+      <a class="nav__item" href="Items.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Items & Products</a>
+      <a class="nav__item" href="Purchases.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18l-2 13H5L3 7z M8 7V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3" stroke-linecap="round"/></svg>Purchases<span class="nav__badge">7</span></a>
+      <a class="nav__item" href="Stock.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8 12 3 3 8l9 5 9-5z" stroke-linecap="round"/></svg>Stock & Inventory</a>
+      <a class="nav__item" href="Imports.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12 m-5-5 5 5 5-5 M5 21h14" stroke-linecap="round"/></svg>Imports</a>
+    </nav>
+    <div class="sidebar__section">Master data</div>
+    <nav class="nav">
+      <a class="nav__item is-active" href="Customers.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="4"/><path d="M3 21a6 6 0 0 1 12 0M16 3.13a4 4 0 0 1 0 7.75M21 21a6 6 0 0 0-3.5-5.45" stroke-linecap="round"/></svg>Customers</a>
+      <a class="nav__item" href="#">Branches</a>
+      <a class="nav__item" href="#">Code lists</a>
+    </nav>
+    <div class="sidebar__device"><div class="device-card">
+      <div class="device-card__row"><span>VSDC status</span><b class="device-card__pulse">Online</b></div>
+      <div class="device-card__row"><span>TIN</span><b>999991130</b></div>
+    </div></div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="search"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg><input placeholder="Search customer name, TIN, mobile…"/><span class="kbd">⌘K</span></div>
+      <div class="topbar__actions">
+        <button class="icon-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke-linecap="round"/></svg><span class="dot"></span></button>
+        <div class="user-pill"><div class="avatar">UM</div><div><div class="user-pill__name">Umurava Admin</div><div class="user-pill__role">Head office · Kigali</div></div></div>
+      </div>
+    </div>
+
+    <div class="page">
+      <div class="page-head">
+        <div><div class="crumbs"><span>Workspace</span><span>·</span><span>Customers</span></div><h1>Customers & TINs</h1></div>
+        <div class="page-head__actions">
+          <button class="btn">Sync TIN list from RRA</button>
+          <button class="btn btn--primary"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>Add customer</button>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 18px;">
+        <div class="card" style="padding: 16px 20px;"><div style="font-size: 11.5px; color: var(--ink-500); text-transform: uppercase; letter-spacing: .05em; font-weight: 600;">Total customers</div><div style="font-size: 22px; font-weight: 700; margin-top: 4px;">312</div><div style="font-size: 12px; color: var(--ink-500);">128 with TIN · 184 walk-in</div></div>
+        <div class="card" style="padding: 16px 20px;"><div style="font-size: 11.5px; color: var(--ink-500); text-transform: uppercase; letter-spacing: .05em; font-weight: 600;">Top customer</div><div style="font-size: 18px; font-weight: 700; margin-top: 4px;">Bralirwa Wholesale</div><div style="font-size: 12px; color: var(--ink-500);">RWF 8.4M MTD</div></div>
+        <div class="card" style="padding: 16px 20px;"><div style="font-size: 11.5px; color: var(--ink-500); text-transform: uppercase; letter-spacing: .05em; font-weight: 600;">Active this month</div><div style="font-size: 22px; font-weight: 700; margin-top: 4px;">186</div><div style="font-size: 12px; color: var(--ink-500);">59% of base</div></div>
+        <div class="card" style="padding: 16px 20px;"><div style="font-size: 11.5px; color: var(--ink-500); text-transform: uppercase; letter-spacing: .05em; font-weight: 600;">Insurance partners</div><div style="font-size: 22px; font-weight: 700; margin-top: 4px;">8</div><div style="font-size: 12px; color: var(--ink-500);">RAMA · MMI · Radiant</div></div>
+      </div>
+
+      <div class="card">
+        <div class="filterbar">
+          <div class="tab-bar"><button class="is-active">All (312)</button><button>Business (128)</button><button>Individual (184)</button><button>Insurance (8)</button></div>
+          <div class="field"><span>Status</span><select><option>Active</option><option>Inactive</option></select></div>
+          <button class="btn" style="margin-left: auto;">Export</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th class="row-checkbox"><input type="checkbox"/></th><th>Customer</th><th>TIN</th><th>Type</th><th>Mobile</th><th class="num">Invoices</th><th class="num">Lifetime</th><th>Last invoice</th><th></th></tr></thead>
+            <tbody>
+              <tr>
+                <td><input type="checkbox"/></td>
+                <td><div style="display:flex; align-items:center; gap:10px;"><div class="avatar" style="background: var(--brand-100); color: var(--brand-700);">BR</div><div><b style="font-weight:600;">Bralirwa Wholesale</b><div class="muted-stack">KN 5 Ave, Kigali</div></div></div></td>
+                <td class="mono">999992007</td>
+                <td><span class="chip chip--brand">Business</span></td>
+                <td class="mono">0788 200 700</td>
+                <td class="num">142</td>
+                <td class="num"><b>RWF 18,420,300</b></td>
+                <td>02 May, 13:42</td>
+                <td class="cell-actions"><button class="btn btn--ghost btn--sm">⋯</button></td>
+              </tr>
+              <tr>
+                <td><input type="checkbox"/></td>
+                <td><div style="display:flex; align-items:center; gap:10px;"><div class="avatar" style="background: #ede9fe; color: #6d28d9;">IP</div><div><b style="font-weight:600;">Intare Pharma Ltd</b><div class="muted-stack">Nyamirambo, Kigali</div></div></div></td>
+                <td class="mono">100110263</td>
+                <td><span class="chip chip--brand">Business</span></td>
+                <td class="mono">0788 123 456</td>
+                <td class="num">86</td>
+                <td class="num"><b>RWF 4,820,100</b></td>
+                <td>02 May, 13:26</td>
+                <td class="cell-actions"><button class="btn btn--ghost btn--sm">⋯</button></td>
+              </tr>
+              <tr>
+                <td><input type="checkbox"/></td>
+                <td><div style="display:flex; align-items:center; gap:10px;"><div class="avatar" style="background: #dcfce7; color: var(--ok);">UM</div><div><b style="font-weight:600;">Umurava Supermarket</b><div class="muted-stack">Kimihurura, Kigali</div></div></div></td>
+                <td class="mono">999991130</td>
+                <td><span class="chip chip--brand">Business</span></td>
+                <td class="mono">0782 555 100</td>
+                <td class="num">58</td>
+                <td class="num"><b>RWF 2,180,400</b></td>
+                <td>02 May, 14:03</td>
+                <td class="cell-actions"><button class="btn btn--ghost btn--sm">⋯</button></td>
+              </tr>
+              <tr>
+                <td><input type="checkbox"/></td>
+                <td><div style="display:flex; align-items:center; gap:10px;"><div class="avatar" style="background: #fef3c7; color: #b45309;">KM</div><div><b style="font-weight:600;">Kigali Mart Branch</b><div class="muted-stack">Remera, Kigali</div></div></div></td>
+                <td class="mono">999992455</td>
+                <td><span class="chip chip--brand">Business</span></td>
+                <td class="mono">0788 654 321</td>
+                <td class="num">42</td>
+                <td class="num"><b>RWF 1,612,800</b></td>
+                <td>02 May, 13:11</td>
+                <td class="cell-actions"><button class="btn btn--ghost btn--sm">⋯</button></td>
+              </tr>
+              <tr>
+                <td><input type="checkbox"/></td>
+                <td><div style="display:flex; align-items:center; gap:10px;"><div class="avatar" style="background: #ffe4e6; color: #be123c;">RA</div><div><b style="font-weight:600;">RAMA Insurance</b><div class="muted-stack">Insurance partner</div></div></div></td>
+                <td class="mono">100442010</td>
+                <td><span class="chip chip--info">Insurance</span></td>
+                <td class="mono">0788 100 200</td>
+                <td class="num">28</td>
+                <td class="num"><b>RWF 412,500</b></td>
+                <td>01 May, 16:48</td>
+                <td class="cell-actions"><button class="btn btn--ghost btn--sm">⋯</button></td>
+              </tr>
+              <tr>
+                <td><input type="checkbox"/></td>
+                <td><div style="display:flex; align-items:center; gap:10px;"><div class="avatar" style="background: var(--ink-200); color: var(--ink-700);">JM</div><div><b style="font-weight:600;">Jean-Marie Habimana</b><div class="muted-stack">Walk-in customer</div></div></div></td>
+                <td class="mono muted">—</td>
+                <td><span class="chip chip--plain">Individual</span></td>
+                <td class="mono">0789 412 008</td>
+                <td class="num">14</td>
+                <td class="num"><b>RWF 184,200</b></td>
+                <td>30 Apr, 18:24</td>
+                <td class="cell-actions"><button class="btn btn--ghost btn--sm">⋯</button></td>
+              </tr>
+              <tr>
+                <td><input type="checkbox"/></td>
+                <td><div style="display:flex; align-items:center; gap:10px;"><div class="avatar" style="background: #cffafe; color: #0e7490;">SK</div><div><b style="font-weight:600;">SkolNet Foods</b><div class="muted-stack">Musanze</div></div></div></td>
+                <td class="mono">999992205</td>
+                <td><span class="chip chip--brand">Business</span></td>
+                <td class="mono">0788 990 110</td>
+                <td class="num">12</td>
+                <td class="num"><b>RWF 142,000</b></td>
+                <td>28 Apr, 11:22</td>
+                <td class="cell-actions"><button class="btn btn--ghost btn--sm">⋯</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <span>Showing 1–7 of 312 customers</span>
+          <div class="pages"><button>‹</button><button class="is-active">1</button><button>2</button><button>3</button><button>…</button><button>22</button><button>›</button></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>
