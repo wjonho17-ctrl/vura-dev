@@ -88,5 +88,7 @@ export const saveStockMasterValidator = vine.compile(
     branchId: vine.string(),
     itemCode: vine.string(),
     remainQuantity: vine.number(),
+    // §9.1: 1=Opening Stock, 2=Purchase IN, 3=Manual Adjustment
+    stockTyCd: vine.enum(['1', '2', '3']).optional(),
   })
 )

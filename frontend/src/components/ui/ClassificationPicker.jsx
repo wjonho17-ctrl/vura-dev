@@ -1,22 +1,14 @@
-/**
- * ClassificationPicker — searchable dropdown for EBM item classification codes.
- * Loads from GET /codes/item/classification/list with debounced search.
- *
- * Props:
- *   value      {string}   — current classification code value
- *   onChange   {fn}       — called with (code) when user selects
- *   required   {boolean}
- *   id         {string}
- */
 import { useState, useEffect, useRef } from 'react'
 import { operatorApi } from '../../api/operator'
 
 export default function ClassificationPicker({ value, onChange, onSelect, required, id = 'classCode' }) {
-  const [query,   setQuery]   = useState(value || '')
-  const [results, setResults] = useState([])
-  const [open,    setOpen]    = useState(false)
-  const [loading, setLoading] = useState(false)
-  const timer = useRef(null)
+  const [query,    setQuery]    = useState(value || '')
+  const [display,  setDisplay]  = useState(value || '')
+  const [selected, setSelected] = useState(null)        // { code, name } after selection
+  const [results,  setResults]  = useState([])
+  const [open,     setOpen]     = useState(false)
+  const [loading,  setLoading]  = useState(false)
+  const timer   = useRef(null)
   const wrapRef = useRef(null)
 
   // Close on outside click
@@ -26,7 +18,7 @@ export default function ClassificationPicker({ value, onChange, onSelect, requir
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  // Debounced search
+  // Debounced search — runs on query (not display)
   useEffect(() => {
     clearTimeout(timer.current)
     if (!query || query.length < 2) { setResults([]); return }
@@ -44,10 +36,23 @@ export default function ClassificationPicker({ value, onChange, onSelect, requir
 
   function select(obj) {
     const code = obj.code || obj.itemClsCd || ''
+    const name = obj.name || obj.itemClsNm || ''
     setQuery(code)
+    setDisplay(code)
+    setSelected({ code, name })
     onChange(code)
     if (onSelect) onSelect(obj)
     setOpen(false)
+    setResults([])
+  }
+
+  function handleChange(e) {
+    const val = e.target.value
+    setDisplay(val)
+    setQuery(val)
+    setSelected(null)
+    onChange(val)
+    setOpen(true)
   }
 
   return (
@@ -56,13 +61,18 @@ export default function ClassificationPicker({ value, onChange, onSelect, requir
         id={id}
         className="form-input"
         required={required}
-        placeholder="Type to search (e.g. 5020230101 or Milk)"
-        value={query}
+        placeholder="Type code or name (e.g. 5020110100 or Mineral Water)"
+        value={display}
         autoComplete="off"
-        onChange={e => { setQuery(e.target.value); onChange(e.target.value); setOpen(true) }}
+        onChange={handleChange}
         onFocus={() => query.length >= 2 && setOpen(true)}
       />
-      {open && (query.length >= 2) && (
+      {selected?.name && (
+        <div style={{ fontSize: 12, color: 'var(--ink-500)', marginTop: 4, paddingLeft: 2 }}>
+          {selected.name}
+        </div>
+      )}
+      {open && query.length >= 2 && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 300,
           background: 'var(--surface)', border: '1px solid var(--ink-200)', borderRadius: 8,

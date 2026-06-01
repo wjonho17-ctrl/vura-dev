@@ -31,6 +31,7 @@ const DEV_MOCK_RESPONSES: Partial<Record<EbmEndpoint, object>> = {
       },
     },
   },
+  [EbmEndpoint.saveDeviceInfo]: { resultCd: '000', resultMsg: 'It is succeeded', resultDt: '20260101000000', data: null },
   [EbmEndpoint.saveStockItems]: { resultCd: '000', resultMsg: 'It is succeeded', resultDt: '20260101000000', data: null },
   [EbmEndpoint.saveStock]:      { resultCd: '000', resultMsg: 'It is succeeded', resultDt: '20260101000000', data: null },
   [EbmEndpoint.saveStockMaster]:{ resultCd: '000', resultMsg: 'It is succeeded', resultDt: '20260101000000', data: null },
@@ -43,12 +44,75 @@ const DEV_MOCK_RESPONSES: Partial<Record<EbmEndpoint, object>> = {
     },
   },
   [EbmEndpoint.savePurchases]:       { resultCd: '000', resultMsg: 'It is succeeded', resultDt: '20260101000000', data: null },
+  [EbmEndpoint.saveItemComposition]: { resultCd: '000', resultMsg: 'It is succeeded', resultDt: '20260101000000', data: null },
   [EbmEndpoint.saveBranchCustomers]: { resultCd: '000', resultMsg: 'It is succeeded', resultDt: '20260101000000', data: null },
   [EbmEndpoint.saveBranchUsers]:     { resultCd: '000', resultMsg: 'It is succeeded', resultDt: '20260101000000', data: null },
   [EbmEndpoint.saveBranchInsurances]:{ resultCd: '000', resultMsg: 'It is succeeded', resultDt: '20260101000000', data: null },
   [EbmEndpoint.updateImportItems]:   { resultCd: '000', resultMsg: 'It is succeeded', resultDt: '20260101000000', data: null },
-  [EbmEndpoint.selectItems]:              { resultCd: '001', resultMsg: 'No search result', resultDt: '20260101000000', data: null },
-  [EbmEndpoint.selectStockItems]:         { resultCd: '001', resultMsg: 'No search result', resultDt: '20260101000000', data: null },
+  [EbmEndpoint.selectItems]: {
+    resultCd: '000', resultMsg: 'It is succeeded', resultDt: '20260101000000',
+    data: {
+      itemList: [
+        {
+          itemCd: 'RW2BQKGM0000001', itemClsCd: '5020110100', itemTyCd: '2',
+          itemNm: 'Inyange Mineral Water 500ml', itemStdNm: 'Mineral Water',
+          orgnNatCd: 'RW', pkgUnitCd: 'BQ', qtyUnitCd: 'U',
+          taxTyCd: 'B', bcd: '50201101', dftPrc: 500,
+          grpPrcL1: 500, grpPrcL2: 450, grpPrcL3: 420, grpPrcL4: 400, grpPrcL5: 380,
+          btchNo: '260101', addInfo: 'Bottled mineral water', sftyQty: 50,
+          isrcAplcbYn: 'N', useYn: 'Y', rraModYn: 'N',
+        },
+        {
+          itemCd: 'RW2CTKGM0000002', itemClsCd: '5020120100', itemTyCd: '2',
+          itemNm: 'Coca-Cola 50cl', itemStdNm: 'Carbonated Soft Drink',
+          orgnNatCd: 'RW', pkgUnitCd: 'CT', qtyUnitCd: 'U',
+          taxTyCd: 'B', bcd: '50201201', dftPrc: 800,
+          grpPrcL1: 800, grpPrcL2: 720, grpPrcL3: null, grpPrcL4: null, grpPrcL5: null,
+          btchNo: '260101', addInfo: null, sftyQty: 24,
+          isrcAplcbYn: 'N', useYn: 'Y', rraModYn: 'N',
+        },
+        {
+          itemCd: 'RW1BGKGM0000003', itemClsCd: '5010110100', itemTyCd: '1',
+          itemNm: 'White Rice 1kg', itemStdNm: 'Milled White Rice',
+          orgnNatCd: 'RW', pkgUnitCd: 'BG', qtyUnitCd: 'KGM',
+          taxTyCd: 'A', bcd: '50101101', dftPrc: 1200,
+          grpPrcL1: 1200, grpPrcL2: 1100, grpPrcL3: 1000, grpPrcL4: null, grpPrcL5: null,
+          btchNo: '260101', addInfo: 'Basic food — exempt', sftyQty: 100,
+          isrcAplcbYn: 'N', useYn: 'Y', rraModYn: 'N',
+        },
+        {
+          itemCd: 'RW2CTKGM0000004', itemClsCd: '5020210100', itemTyCd: '2',
+          itemNm: 'Primus Beer 72cl', itemStdNm: 'Lager Beer',
+          orgnNatCd: 'RW', pkgUnitCd: 'CT', qtyUnitCd: 'U',
+          taxTyCd: 'B', bcd: '50202101', dftPrc: 1500,
+          grpPrcL1: 1500, grpPrcL2: 1400, grpPrcL3: null, grpPrcL4: null, grpPrcL5: null,
+          btchNo: '260101', addInfo: null, sftyQty: 24,
+          isrcAplcbYn: 'N', useYn: 'Y', rraModYn: 'N',
+        },
+        {
+          itemCd: 'RW3NTKGM0000005', itemClsCd: '9010100100', itemTyCd: '3',
+          itemNm: 'IT Support Service', itemStdNm: 'Software Support',
+          orgnNatCd: 'RW', pkgUnitCd: 'NT', qtyUnitCd: 'U',
+          taxTyCd: 'B', bcd: null, dftPrc: 50000,
+          grpPrcL1: null, grpPrcL2: null, grpPrcL3: null, grpPrcL4: null, grpPrcL5: null,
+          btchNo: null, addInfo: 'IT consulting — service type, no stock', sftyQty: null,
+          isrcAplcbYn: 'N', useYn: 'Y', rraModYn: 'N',
+        },
+      ]
+    }
+  },
+  [EbmEndpoint.selectStockItems]: {
+    resultCd: '000', resultMsg: 'It is succeeded', resultDt: '20260101000000',
+    data: {
+      stockList: [
+        { itemCd: 'RW2BQKGM0000001', rsdQty: 120 },
+        { itemCd: 'RW2CTKGM0000002', rsdQty: 48  },
+        { itemCd: 'RW1BGKGM0000003', rsdQty: 250 },
+        { itemCd: 'RW2CTKGM0000004', rsdQty: 72  },
+        { itemCd: 'RW3NTKGM0000005', rsdQty: 0   },
+      ]
+    }
+  },
   [EbmEndpoint.selectImportItems]: {
     resultCd: '000', resultMsg: 'It is succeeded', resultDt: '20260331000000',
     data: {
@@ -91,9 +155,96 @@ const DEV_MOCK_RESPONSES: Partial<Record<EbmEndpoint, object>> = {
   },
   [EbmEndpoint.selectBranchUsers]:        { resultCd: '001', resultMsg: 'No search result', resultDt: '20260101000000', data: null },
   [EbmEndpoint.selectBranchInsurances]:   { resultCd: '001', resultMsg: 'No search result', resultDt: '20260101000000', data: null },
-  [EbmEndpoint.selectItemsClass]:  { resultCd: '001', resultMsg: 'No search result', resultDt: '20260101000000', data: null },
+  [EbmEndpoint.selectItemsClass]: {
+    resultCd: '000', resultMsg: 'It is succeeded', resultDt: '20260101000000',
+    data: {
+      itemClsList: [
+        // Level 1 — top categories
+        { itemClsCd: '5000000000', itemClsNm: 'Food, Beverages & Tobacco',       itemClsLvl: 1, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '6000000000', itemClsNm: 'Clothing & Accessories',           itemClsLvl: 1, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '4400000000', itemClsNm: 'Electronic Components & Supplies', itemClsLvl: 1, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '8500000000', itemClsNm: 'Healthcare & Medical',             itemClsLvl: 1, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '7800000000', itemClsNm: 'Building & Construction',          itemClsLvl: 1, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '9000000000', itemClsNm: 'Services',                         itemClsLvl: 1, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        // Level 2 — sub-categories
+        { itemClsCd: '5020000000', itemClsNm: 'Beverages',           itemClsLvl: 2, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '5010000000', itemClsNm: 'Food products',       itemClsLvl: 2, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '5030000000', itemClsNm: 'Tobacco products',    itemClsLvl: 2, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '8510000000', itemClsNm: 'Pharmaceuticals',     itemClsLvl: 2, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '9010000000', itemClsNm: 'Professional Services', itemClsLvl: 2, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '9020000000', itemClsNm: 'Transportation Services', itemClsLvl: 2, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        // Level 3
+        { itemClsCd: '5020100000', itemClsNm: 'Non-alcoholic beverages', itemClsLvl: 3, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '5020200000', itemClsNm: 'Alcoholic beverages',     itemClsLvl: 3, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '5010100000', itemClsNm: 'Cereals & Grains',        itemClsLvl: 3, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '5010200000', itemClsNm: 'Dairy products',          itemClsLvl: 3, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '5010300000', itemClsNm: 'Meat & Poultry',          itemClsLvl: 3, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '8510100000', itemClsNm: 'Medicines & Drugs',       itemClsLvl: 3, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '9010100000', itemClsNm: 'IT & Software Services',  itemClsLvl: 3, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        // Level 4
+        { itemClsCd: '5020110000', itemClsNm: 'Water',           itemClsLvl: 4, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '5020120000', itemClsNm: 'Soft drinks',     itemClsLvl: 4, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '5020130000', itemClsNm: 'Fruit juices',    itemClsLvl: 4, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '5020210000', itemClsNm: 'Beer & Lager',    itemClsLvl: 4, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '5020220000', itemClsNm: 'Wine',            itemClsLvl: 4, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '5020230000', itemClsNm: 'Spirits & Liquor',itemClsLvl: 4, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '5010110000', itemClsNm: 'Rice',            itemClsLvl: 4, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '5010120000', itemClsNm: 'Maize / Corn',    itemClsLvl: 4, taxTyCd: null, mjrTgYn: 'Y', useYn: 'Y' },
+        // Level 5 — selectable leaf codes
+        { itemClsCd: '5020110100', itemClsNm: 'Mineral water (bottled)',   itemClsLvl: 5, taxTyCd: 'B', mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '5020110200', itemClsNm: 'Sparkling water',           itemClsLvl: 5, taxTyCd: 'B', mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '5020120100', itemClsNm: 'Carbonated soft drinks',    itemClsLvl: 5, taxTyCd: 'B', mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '5020120200', itemClsNm: 'Energy drinks',             itemClsLvl: 5, taxTyCd: 'B', mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '5020130100', itemClsNm: 'Orange juice',              itemClsLvl: 5, taxTyCd: 'B', mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '5020210100', itemClsNm: 'Beer (standard)',           itemClsLvl: 5, taxTyCd: 'B', mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '5020220100', itemClsNm: 'Red wine',                  itemClsLvl: 5, taxTyCd: 'B', mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '5010110100', itemClsNm: 'White rice (milled)',       itemClsLvl: 5, taxTyCd: 'A', mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '5010110200', itemClsNm: 'Brown rice',               itemClsLvl: 5, taxTyCd: 'A', mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '5010120100', itemClsNm: 'Maize flour',              itemClsLvl: 5, taxTyCd: 'A', mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '5010200100', itemClsNm: 'Fresh milk',               itemClsLvl: 5, taxTyCd: 'A', mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '5010200200', itemClsNm: 'Yoghurt',                  itemClsLvl: 5, taxTyCd: 'B', mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '5010300100', itemClsNm: 'Fresh chicken',            itemClsLvl: 5, taxTyCd: 'A', mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '5010300200', itemClsNm: 'Beef (fresh)',             itemClsLvl: 5, taxTyCd: 'A', mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '8510100100', itemClsNm: 'Prescription medicines',   itemClsLvl: 5, taxTyCd: 'A', mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '8510100200', itemClsNm: 'Over-the-counter medicines',itemClsLvl: 5, taxTyCd: 'A', mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '9010100100', itemClsNm: 'Software development service', itemClsLvl: 5, taxTyCd: 'B', mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '9010100200', itemClsNm: 'IT consulting service',    itemClsLvl: 5, taxTyCd: 'B', mjrTgYn: 'Y', useYn: 'Y' },
+        { itemClsCd: '9020100100', itemClsNm: 'Freight transport service',itemClsLvl: 5, taxTyCd: 'B', mjrTgYn: 'Y', useYn: 'Y' },
+      ]
+    }
+  },
   [EbmEndpoint.selectCodes]:       { resultCd: '001', resultMsg: 'No search result', resultDt: '20260101000000', data: null },
-  [EbmEndpoint.selectNotices]:  { resultCd: '001', resultMsg: 'No search result', resultDt: '20260101000000', data: null },
+  [EbmEndpoint.selectNotices]:  {
+    resultCd: '000', resultMsg: 'It is succeeded', resultDt: '20260531120000',
+    data: {
+      noticeList: [
+        {
+          noticeNo: 1,
+          title: 'VAT Rate Adjustment for 2026',
+          cont: 'Dear Taxpayers,\n\nPlease be informed that the VAT rates have been adjusted for the year 2026. The new rates are as follows:\n- Category A: 0%\n- Category B: 18%\n- Category C: 0%\n- Category D: 0%\n\nThese changes are effective from January 1, 2026.',
+          dtlUrl: 'https://www.rra.gov.rw/notices/vat-2026',
+          regrNm: 'Rwanda Revenue Authority',
+          regDt: '20260501100000',
+        },
+        {
+          noticeNo: 2,
+          title: 'Electronic Invoice Requirements Update',
+          cont: 'All taxpayers are required to submit invoices electronically through the VSDC system. The new requirements include:\n1. All invoices must be signed electronically\n2. Invoices must be transmitted within 24 hours\n3. Use of QR codes is now mandatory for all invoice types\n\nFor more information, please visit our website.',
+          dtlUrl: 'https://www.rra.gov.rw/notices/invoice-requirements',
+          regrNm: 'Rwanda Revenue Authority',
+          regDt: '20260515140000',
+        },
+        {
+          noticeNo: 3,
+          title: 'Year-End Tax Compliance Reminder',
+          cont: 'As we approach the end of the fiscal year, please ensure all your tax obligations are met:\n- Reconcile all transactions\n- Ensure all receipts are recorded\n- Submit final reports before the deadline\n- Maintain proper documentation\n\nFailure to comply may result in penalties.',
+          dtlUrl: 'https://www.rra.gov.rw/notices/tax-compliance',
+          regrNm: 'Rwanda Revenue Authority',
+          regDt: '20260520090000',
+        },
+      ],
+    },
+  },
   [EbmEndpoint.selectCustomer]: { resultCd: '001', resultMsg: 'No search result', resultDt: '20260101000000', data: null },
   [EbmEndpoint.selectBranches]: {
     resultCd: '000', resultMsg: 'It is succeeded', resultDt: '20260101000000',

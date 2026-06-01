@@ -136,6 +136,36 @@
   </div>
 
   <div class="section">
+    <div class="section-title">NS Sales by Item Classification Group (F-51)</div>
+    <table class="totals-table">
+      <thead>
+        <tr>
+          <th>Item Classification Group</th>
+          <th>Total Amount</th>
+          <th>Tax Amount</th>
+          <th>Quantity</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if(!itemGroupSales || Object.keys(itemGroupSales).length === 0)
+        <tr>
+          <td colspan="4" style="text-align:center;">No item sales by group</td>
+        </tr>
+        @else
+          @each((group, groupName) in itemGroupSales)
+          <tr>
+            <td>{{groupName}}</td>
+            <td>RWF {{parseFloat(group.amount).toFixed(2)}}</td>
+            <td>RWF {{parseFloat(group.taxAmount).toFixed(2)}}</td>
+            <td>{{parseFloat(group.quantity).toFixed(0)}}</td>
+          </tr>
+          @end
+        @end
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
     <div class="section-title">Adjustments</div>
     <div class="row"><strong>All Discounts:</strong> <span>RWF {{allDiscount}}</span></div>
   </div>

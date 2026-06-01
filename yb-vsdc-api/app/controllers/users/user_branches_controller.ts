@@ -128,6 +128,33 @@ export default class UserBranchesController extends CatchEbmAndAllError {
     }
   }
 
+  async selectBranches({ response, auth, request }: HttpContext) {
+    try {
+      const user = auth.user as User
+      const lastRequestDt = request.input('dt', user.branchLastReqDt || '20180101000000')
+      const branchId = request.param('branchId') || user.branchId || '00'
+
+      const res = await new EbmBranchService().selectBranches({
+        tin: user.tin,
+        branchId,
+        lastRequestDt,
+      })
+
+      if (res.resultCd === EbmApiResponseCode.ServerSucceeded) {
+        user.branchLastReqDt = res.resultDt
+        await user.save()
+      }
+
+      return res
+    } catch (error) {
+      console.error(error)
+      return response.status(500).json({
+        error: 'Failed to fetch branches',
+        detail: error instanceof Error ? error.message : 'Unknown error'
+      })
+    }
+  }
+
   async save_branch_customer({ request, response, auth }: HttpContext) {
     const payload = await request.validateUsing(saveBranchCustomerValidator)
 

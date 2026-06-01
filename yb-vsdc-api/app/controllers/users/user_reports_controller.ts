@@ -1,4 +1,4 @@
-import { getEbmPaymentMethodDescription } from '#helpers/ebm_helper'
+import { getEbmPaymentMethodDescription, getMainItemGroup } from '#helpers/ebm_helper'
 import User from '#models/user'
 import Purchase from '#models/purchase'
 import { PaymentSummary } from '#types/index'
@@ -414,6 +414,22 @@ export default class UserReportsController {
     const allDiscountNS = allDiscountNSQs.flatMap((d) => d.items.data.map((d) => d.discountAmount)).reduce((a, b) => a + b, 0)
     const allDiscountNR = allDiscountNRQs.flatMap((d) => d.items.data.map((d) => d.discountAmount)).reduce((a, b) => a + b, 0)
 
+    // F-51: Calculate NS sales breakdown by item classification group
+    const itemGroupSales: { [key: string]: { amount: number; taxAmount: number; quantity: number } } = {}
+    for (const sale of allDiscountNSQs) {
+      if (sale.items?.data && Array.isArray(sale.items.data)) {
+        for (const item of sale.items.data) {
+          const groupName = getMainItemGroup(item.classificationCode || '')
+          if (!itemGroupSales[groupName]) {
+            itemGroupSales[groupName] = { amount: 0, taxAmount: 0, quantity: 0 }
+          }
+          itemGroupSales[groupName].amount += (item.supplyPrice || 0)
+          itemGroupSales[groupName].taxAmount += (item.taxAmount || 0)
+          itemGroupSales[groupName].quantity += (item.quantity || 0)
+        }
+      }
+    }
+
     const firstDepositX = await user.related('cashMovements').query()
       .where('movement_type', 'DEPOSIT')
       .andWhereBetween('created_at', [startTime.toSQL()!!, endTime.toSQL()!!])
@@ -434,6 +450,7 @@ export default class UserReportsController {
       trainingSummury: salesSummaries[3],
       proformaSummury: salesSummaries[4],
       paymentSummaries,
+      itemGroupSales, // F-51: Item classification group breakdown
       allDiscount: (allDiscountNS - allDiscountNR).toFixed(2),
       openingDeposit: firstDepositX ? Number(firstDepositX.amount).toFixed(2) : '0.00',
       incompleteSales: Number(incompleteSalesXCount?.$extras?.total ?? 0),
@@ -502,18 +519,15 @@ export default class UserReportsController {
   async ej({ request, view, auth }: HttpContext) {
     const payload = await request.validateUsing(periodReportValidator)
     const user = auth.user as User
-    const startTime = DateTime.fromISO(payload.start).startOf('day')
-    const endTime = DateTime.fromISO(payload.end).endOf('day')
 
-    const sales = await user.related('sales').query()
-      .whereIn('invoiceType', ['NS', 'NR'])
-      .andWhereBetween('created_at', [startTime.toSQL()!!, endTime.toSQL()!!])
-      .orderBy('created_at', 'desc')
-      .exec()
+    // F-48: Fetch EJ data from EBM using delta sync (authoritative source)
+    const { EbmEJReportService } = await import('#services/ebm/ebm_ej_report_service')
+    const ejService = new EbmEJReportService(user)
+    const transactions = await ejService.fetchEJData(payload.start, payload.end)
 
     const html = await view.render('reports/ej', {
       dateTime: `${payload.start} to ${payload.end}`,
-      sales
+      transactions // F-48: Use EBM data as authoritative source
     })
 
     const url = await ReportPdfAction.generateAndStore('ej', html)
@@ -593,5 +607,38 @@ export default class UserReportsController {
 
     const url = await ReportPdfAction.generateAndStore('stock_movement', html)
     return { url }
+  }
+
+  // F-46: Z Report (End of Day) — Mandatory daily closure
+  async z_report({ response, auth }: HttpContext) {
+    try {
+      const user = auth.user as User
+      const { EbmZReportService } = await import('#services/ebm/ebm_z_report_service')
+
+      const zReportService = new EbmZReportService(user)
+
+      // F-46: Check if Z report can be issued
+      const canIssue = await zReportService.canIssueZReport()
+      if (!canIssue.allowed) {
+        return response.badRequest({
+          error: 'Cannot issue Z report',
+          reason: canIssue.reason,
+        })
+      }
+
+      // F-46: Generate and transmit Z report
+      const zReport = await zReportService.generateZReport()
+
+      return {
+        ...zReport,
+        message: 'Z Report issued successfully. Sales are now blocked until next business day.',
+        status: 'FINAL',
+      }
+    } catch (error) {
+      return response.badRequest({
+        error: 'Failed to generate Z report',
+        detail: error instanceof Error ? error.message : 'Unknown error',
+      })
+    }
   }
 }

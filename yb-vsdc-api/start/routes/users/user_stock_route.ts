@@ -23,10 +23,15 @@ router
 
     router.delete('/item/:code', [UserStocksController, 'items_delete'])
     
+    router.get('/item/:code/compositions', [UserStocksController, 'items_composition_list'])
     router.post('/item/composition/save', [UserStocksController, 'items_composition_save'])
+
+    // F-11 §5.2 — Pull items from EBM (delta sync via itemLastReqDt)
+    router.post('/item/sync', [UserStocksController, 'items_sync'])
     //#endregion
 
     //#region stocks
+    router.get('/master/list', [UserStocksController, 'stocks_master_list'])
     router.get('/list', [UserStocksController, 'stocks_list'])
 
     router.post('/save', [UserStocksController, 'stocks_save'])
@@ -36,6 +41,7 @@ router
     router.post('/master/save', [UserStocksController, 'stocks_master_save'])
 
     router.get('/sync', [UserStocksController, 'stocks_sync'])
+    router.post('/transfer', [UserStocksController, 'stocks_transfer'])
     //#endregion
   })
   .prefix('/stocks')

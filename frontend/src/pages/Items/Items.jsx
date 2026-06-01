@@ -5,6 +5,7 @@ import { logActivity } from '../../hooks/useActivityLog'
 import ClassificationPicker from '../../components/ui/ClassificationPicker'
 import ItemCompositionModal from './components/ItemCompositionModal'
 import ItemDetailView from './components/ItemDetailView'
+import ItemClassificationModal from './components/ItemClassificationModal'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const PER_PAGE = 5
@@ -13,6 +14,7 @@ const TYPE_CODES = [
   { v: '1', l: 'Raw Material' },
   { v: '2', l: 'Finished Product' },
   { v: '3', l: 'Service (no stock check)' },
+  { v: '4', l: 'Composed / Bundle' },
 ]
 const TAX_OPTS = [
   { v: 'A', l: 'A · Exempt (0%)' },
@@ -246,6 +248,63 @@ export default function Items() {
   const [taxFilter,    setTaxFilter]    = useState('')
   const [originFilter, setOriginFilter] = useState('')
 
+  // ── Codes tab state ─────────────────────────────────────────────────────
+  const [codesSearch,  setCodesSearch]  = useState('')
+  const [codesInput,   setCodesInput]   = useState('')
+  const [codesTax,     setCodesTax]     = useState('')
+  const [codesList,    setCodesList]    = useState([])
+  const [codesMeta,    setCodesMeta]    = useState(null)
+  const [codesLoading, setCodesLoading] = useState(false)
+  const [syncStatus,   setSyncStatus]   = useState('idle')
+  const [syncCount,    setSyncCount]    = useState(null)
+
+  const loadCodes = useCallback(async (p = 1) => {
+    setCodesLoading(true)
+    try {
+      const res = await operatorApi.searchClassificationCodes(
+        codesSearch.trim(),
+        { page: p, perPage: 20, taxType: codesTax }
+      )
+      const data = res?.data ?? res ?? []
+      setCodesList(Array.isArray(data) ? data : [])
+      setCodesMeta(res?.meta ?? null)
+    } catch { setCodesList([]) }
+    finally { setCodesLoading(false) }
+  }, [codesSearch, codesTax])
+
+  useEffect(() => { if (pageTab === 'Codes') loadCodes(1) }, [pageTab, loadCodes])
+
+  async function handleSyncCodes() {
+    setSyncStatus('loading')
+    try {
+      const count = await operatorApi.syncClassificationCodes()
+      setSyncCount(count)
+      setSyncStatus('done')
+      loadCodes(1)
+    } catch (err) {
+      setSyncStatus('error')
+      setTimeout(() => setSyncStatus('idle'), 3000)
+    }
+  }
+
+  const [ebmSyncStatus, setEbmSyncStatus] = useState('idle')
+  const [ebmSyncCount,  setEbmSyncCount]  = useState(null)
+  const [showItemClassModal, setShowItemClassModal] = useState(false)
+
+  async function handleEbmSync() {
+    setEbmSyncStatus('loading')
+    try {
+      const res = await operatorApi.syncItemsFromEbm()
+      setEbmSyncCount(res?.itemsSynced ?? 0)
+      setEbmSyncStatus('done')
+      load(1)
+      setTimeout(() => setEbmSyncStatus('idle'), 4000)
+    } catch (err) {
+      setEbmSyncStatus('error')
+      setTimeout(() => setEbmSyncStatus('idle'), 3000)
+    }
+  }
+
   const [detailItem,   setDetailItem]   = useState(null)
   const [form,         setForm]         = useState(EMPTY_FORM)
   const [saving,       setSaving]       = useState(false)
@@ -388,23 +447,62 @@ export default function Items() {
               )}
             </div>
             <h1>
-              {pageTab === 'Add' ? 'Register new item'
+              {pageTab === 'Add'    ? 'Register new item'
                 : pageTab === 'Detail' ? (detailItem?.name || 'Item details')
+                : pageTab === 'Codes'  ? 'HS Classification Codes'
                 : 'Item catalog'}
             </h1>
           </div>
           <div className="page-head__actions">
-            {pageTab === 'List' ? (
+            {/* Tab switcher — only on List and Codes */}
+            {(pageTab === 'List' || pageTab === 'Codes') && (
+              <div style={{ display: 'flex', gap: 2, background: 'var(--ink-100)', borderRadius: 8, padding: 3, marginRight: 8 }}>
+                {[['List', 'Items'], ['Codes', 'HS Codes']].map(([tab, label]) => (
+                  <button key={tab} onClick={() => setPageTab(tab)}
+                    style={{
+                      padding: '5px 14px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                      fontSize: 13, fontWeight: 500, fontFamily: 'inherit',
+                      background: pageTab === tab ? 'var(--surface)' : 'transparent',
+                      color: pageTab === tab ? 'var(--ink-900)' : 'var(--ink-500)',
+                      boxShadow: pageTab === tab ? '0 1px 3px rgba(0,0,0,.1)' : 'none',
+                    }}>{label}</button>
+                ))}
+              </div>
+            )}
+            {pageTab === 'List' && (
               <>
                 <button className="icon-btn" title="Refresh" onClick={() => load(currentPage)}><IcoRefresh /></button>
                 <button className="icon-btn" title="Export Excel (all data)" onClick={() => exportAllExcel(search)}><IcoXlsx /></button>
                 <button className="icon-btn" title="Export CSV (all data)" onClick={() => exportAllCSV(search)}><IcoCsv /></button>
                 <button className="icon-btn" title="Print / PDF (all data)" onClick={() => printAllData(search)}><IcoPdf /></button>
+                <button
+                  className="btn btn--sm"
+                  title="View item classifications from EBM"
+                  onClick={() => setShowItemClassModal(true)}
+                >
+                  View Item Classes
+                </button>
+                <button
+                  className="btn btn--sm"
+                  title="Pull items registered in EBM that are missing from local catalog"
+                  onClick={handleEbmSync}
+                  disabled={ebmSyncStatus === 'loading'}
+                  style={ebmSyncStatus === 'done' ? { color: 'var(--ok)', borderColor: '#bbf7d0' } : {}}
+                >
+                  {ebmSyncStatus === 'loading' ? (
+                    <><svg className="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" strokeLinecap="round"/></svg> Syncing…</>
+                  ) : ebmSyncStatus === 'done' ? (
+                    <>✓ {ebmSyncCount > 0 ? `${ebmSyncCount} synced` : 'Up to date'}</>
+                  ) : (
+                    <><IcoRefresh /> Sync EBM</>
+                  )}
+                </button>
                 <button className="btn btn--primary" onClick={openAdd}>
                   <IcoPlus /> Add Item
                 </button>
               </>
-            ) : (
+            )}
+            {(pageTab === 'Add' || pageTab === 'Detail') && (
               <button className="btn" onClick={backToList}>
                 <IcoBack /> Back to catalog
               </button>
@@ -541,7 +639,10 @@ export default function Items() {
                                   {initials}
                                 </div>
                                 <div>
-                                  <div style={{ fontWeight: 600 }}>{item.name}</div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <span style={{ fontWeight: 600 }}>{item.name}</span>
+                                    {item.typeCode === '4' && <span style={{ fontSize: 10, background: '#ede9fe', color: '#6d28d9', borderRadius: 4, padding: '1px 5px', fontWeight: 600 }}>Bundle</span>}
+                                  </div>
                                   {item.barcode && <div style={{ fontSize: 11, color: 'var(--ink-500)', fontFamily: 'var(--font-mono)' }}>BCD {item.barcode}</div>}
                                 </div>
                               </div>
@@ -699,6 +800,140 @@ export default function Items() {
         )}
 
         {/* ═══════════════════════════════════════════════════
+            CODES TAB
+        ═══════════════════════════════════════════════════ */}
+        {pageTab === 'Codes' && (
+          <div className="card">
+            {/* toolbar */}
+            <div className="filterbar">
+              <div className="field" style={{ flex: 1 }}>
+                <IcoSearch />
+                <input
+                  placeholder="Search by code or name (e.g. 5020230101 or Mineral Water)…"
+                  value={codesInput}
+                  onChange={e => setCodesInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') setCodesSearch(codesInput) }}
+                />
+                {codesInput && codesInput !== codesSearch && (
+                  <button className="btn btn--sm btn--primary" style={{ height: 24, padding: '0 8px', fontSize: 11 }}
+                    onClick={() => setCodesSearch(codesInput)}>Go</button>
+                )}
+                {codesSearch && (
+                  <button className="btn btn--sm" style={{ height: 24, padding: '0 8px', fontSize: 11 }}
+                    onClick={() => { setCodesSearch(''); setCodesInput('') }}>✕ Clear</button>
+                )}
+              </div>
+              <div className="field">
+                <select value={codesTax} onChange={e => setCodesTax(e.target.value)} style={{ minWidth: 120 }}>
+                  <option value="">All Tax Types</option>
+                  <option value="A">A · Exempt (0%)</option>
+                  <option value="B">B · VAT 18%</option>
+                  <option value="C">C · Zero-rated</option>
+                  <option value="D">D · Non-VAT</option>
+                </select>
+              </div>
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+                {syncStatus === 'done' && (
+                  <span className="chip chip--ok" style={{ fontSize: 12 }}>
+                    ✓ {syncCount > 0 ? `${syncCount} codes updated` : 'Up to date'}
+                  </span>
+                )}
+                <button
+                  className="btn btn--sm"
+                  onClick={handleSyncCodes}
+                  disabled={syncStatus === 'loading'}
+                  title="Pull latest codes from RRA EBM server"
+                >
+                  {syncStatus === 'loading'
+                    ? <><svg className="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" strokeLinecap="round"/></svg> Syncing…</>
+                    : <><IcoRefresh /> Sync from RRA</>
+                  }
+                </button>
+              </div>
+            </div>
+
+            {/* table */}
+            {codesLoading ? (
+              <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-500)' }}>Loading codes…</div>
+            ) : codesList.length === 0 ? (
+              <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--ink-500)' }}>
+                <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--ink-700)', marginBottom: 6 }}>
+                  {codesSearch ? `No codes matching "${codesSearch}"` : 'No classification codes found'}
+                </div>
+                <div style={{ fontSize: 13, marginBottom: 16 }}>
+                  {codesSearch ? 'Try a different search term.' : 'Run "Sync from RRA" to pull the latest codes from the EBM server.'}
+                </div>
+                <button className="btn btn--primary btn--sm" onClick={handleSyncCodes} disabled={syncStatus === 'loading'}>
+                  {syncStatus === 'loading' ? 'Syncing…' : 'Sync from RRA'}
+                </button>
+              </div>
+            ) : (
+              <div className="table-wrap">
+                <table className="data">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 140 }}>Code</th>
+                      <th>Name</th>
+                      <th style={{ width: 60 }}>Level</th>
+                      <th style={{ width: 100 }}>Tax Type</th>
+                      <th style={{ width: 80 }}>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {codesList.map((c, i) => (
+                      <tr key={c.code || i}
+                        style={{ opacity: c.used === 'N' ? 0.45 : 1 }}
+                        title={c.used === 'N' ? 'This code is disabled by RRA' : ''}
+                      >
+                        <td>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12.5, color: 'var(--brand-700)', fontWeight: 600 }}>
+                            {c.code}
+                          </span>
+                        </td>
+                        <td style={{ fontWeight: c.level <= 2 ? 600 : 400, paddingLeft: c.level > 2 ? `${(c.level - 2) * 14}px` : undefined }}>
+                          {c.level > 2 && <span style={{ color: 'var(--ink-300)', marginRight: 6 }}>{'└'}</span>}
+                          {c.name}
+                        </td>
+                        <td>
+                          <span style={{ fontSize: 11, color: 'var(--ink-500)', fontFamily: 'var(--font-mono)' }}>
+                            L{c.level}
+                          </span>
+                        </td>
+                        <td>
+                          {c.taxType
+                            ? <span className={`tax-chip ${TAX_COLORS[c.taxType] || ''}`}>{TAX_LABEL[c.taxType] || c.taxType}</span>
+                            : <span style={{ color: 'var(--ink-400)', fontSize: 12 }}>—</span>
+                          }
+                        </td>
+                        <td>
+                          {c.used === 'Y'
+                            ? <span className="chip chip--ok" style={{ fontSize: 11 }}>Active</span>
+                            : <span className="chip chip--err" style={{ fontSize: 11 }}>Disabled</span>
+                          }
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* pagination */}
+            {!codesLoading && codesMeta && codesMeta.lastPage > 1 && (
+              <div className="pagination">
+                <span>
+                  Showing {((codesMeta.currentPage - 1) * 20) + 1}–{Math.min(codesMeta.currentPage * 20, codesMeta.total)} of {codesMeta.total} codes
+                </span>
+                <div className="pages">
+                  <button disabled={codesMeta.currentPage <= 1} onClick={() => loadCodes(codesMeta.currentPage - 1)}>‹</button>
+                  <button disabled={codesMeta.currentPage >= codesMeta.lastPage} onClick={() => loadCodes(codesMeta.currentPage + 1)}>›</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════
             ADD ITEM FORM (full width, no stats)
         ═══════════════════════════════════════════════════ */}
         {pageTab === 'Add' && (
@@ -719,29 +954,12 @@ export default function Items() {
                 {/* Two-column main grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 24px' }}>
 
-                  {/* Item name — spans full width */}
-                  <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                  {/* Row 1: Item name | Item type | Classification */}
+                  <div className="form-group">
                     <label className="form-label">Item name <span style={{ color: 'var(--err)' }}>*</span></label>
                     <input className="form-input" required placeholder="e.g. Coca-Cola 50cl PET"
                       value={form.name} onChange={e => setF('name', e.target.value)} />
                     <span className="form-hint">Used on receipts · up to 200 characters</span>
-                  </div>
-
-                  {/* Classification — spans 2 cols */}
-                  <div className="form-group" style={{ gridColumn: '1 / 3' }}>
-                    <label className="form-label">Classification <span style={{ color: 'var(--err)' }}>*</span></label>
-                    <ClassificationPicker required value={form.classificationCode} 
-                      onChange={v => setF('classificationCode', v)} 
-                      onSelect={obj => {
-                        // Auto-fill name if currently empty
-                        if (!form.name) setF('name', obj.name || obj.itemClsNm)
-                        
-                        // Auto-fill tax if provided
-                        const tax = obj.taxType || obj.taxTyCd
-                        if (tax) setF('taxTypeCode', tax)
-                      }}
-                    />
-                    <span className="form-hint">Type a name or code — select from dropdown to save</span>
                   </div>
 
                   <div className="form-group">
@@ -749,6 +967,19 @@ export default function Items() {
                     <select className="form-input" value={form.typeCode} onChange={e => setF('typeCode', e.target.value)}>
                       {TYPE_CODES.map(t => <option key={t.v} value={t.v}>{t.v} · {t.l}</option>)}
                     </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Classification <span style={{ color: 'var(--err)' }}>*</span></label>
+                    <ClassificationPicker required value={form.classificationCode}
+                      onChange={v => setF('classificationCode', v)}
+                      onSelect={obj => {
+                        if (!form.name) setF('name', obj.name || obj.itemClsNm)
+                        const tax = obj.taxType || obj.taxTyCd
+                        if (tax) setF('taxTypeCode', tax)
+                      }}
+                    />
+                    <span className="form-hint">Type name or code — pick from dropdown</span>
                   </div>
 
                   <div className="form-group">
@@ -951,6 +1182,13 @@ export default function Items() {
             onSaved={() => load(currentPage)}
           />
         )}
+
+        {/* ── Item Classification modal ── */}
+        <ItemClassificationModal
+          isOpen={showItemClassModal}
+          onClose={() => setShowItemClassModal(false)}
+          branchId={'00'}
+        />
       </div>
     </AppShell>
   )

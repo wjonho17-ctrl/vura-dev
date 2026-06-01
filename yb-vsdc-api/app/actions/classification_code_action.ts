@@ -1,4 +1,5 @@
 import Admin from "#models/admin";
+import User from "#models/user";
 import ClassificationCode from "#models/classification_code";
 import { EbmItemService } from "#services/ebm/ebm_item_service";
 import env from "#start/env";
@@ -13,13 +14,19 @@ const client = new Meilisearch({
 export const MEILLISEARCH_PURCHASE_INDEX = 'classification_codes'
 
 export default class ClassificationCodeAction {
-  static async sync(admin: Admin) {
+  static async sync(caller: Admin | User) {
     let count = 0
 
+    // Admins use delta sync via classificationLastReqDt.
+    // Operators always do a full sync since they don't own the delta pointer.
+    const lastRequestDt = caller instanceof Admin
+      ? (caller.classificationLastReqDt || '20180101000000')
+      : '20180101000000'
+
     const response = await new EbmItemService().selectItemClass({
-      branchId: "00",
-      tin: admin.tin,
-      lastRequestDt: admin.classificationLastReqDt || '20180101000000',
+      branchId: caller instanceof User ? (caller.branchId || '00') : '00',
+      tin: caller.tin,
+      lastRequestDt,
     })
 
     if (response.resultCd != EbmApiResponseCode.ServerSucceeded && response.resultCd != EbmApiResponseCode.NoSearchResult) {
@@ -27,15 +34,15 @@ export default class ClassificationCodeAction {
     }
 
     if (response.resultCd == EbmApiResponseCode.ServerSucceeded) {
-
       const items = this.formatItemClassifcationFromEbm(response.data.itemClsList)
-
       await ClassificationCode.updateOrCreateMany('code', items)
-
       count = items.length
     }
 
-    await admin.merge({ classificationLastReqDt: response.resultDt }).save()
+    // Only persist the delta timestamp on Admin to avoid User model migration
+    if (caller instanceof Admin) {
+      await caller.merge({ classificationLastReqDt: response.resultDt }).save()
+    }
 
     return Promise.resolve(count)
   }
@@ -55,7 +62,6 @@ export default class ClassificationCodeAction {
 
   static formatItemClassifcationFromEbm(items: EbmItemClassification[]) {
     return items.map((item) => ({
-      id: +item.itemClsCd,
       name: item.itemClsNm,
       code: item.itemClsCd,
       level: item.itemClsLvl,

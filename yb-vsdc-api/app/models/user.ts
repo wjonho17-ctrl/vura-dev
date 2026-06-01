@@ -113,6 +113,16 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column()
   declare lastImportTaskCode: number
 
+  // F-46: Z Report tracking
+  @column.dateTime()
+  declare lastZReportDate: DateTime | null
+
+  @column()
+  declare lastZReportNo: number // Counter for Z reports issued
+
+  @column()
+  declare canIssueSales: boolean // F-46: Whether new sales are allowed (blocked after Z report)
+
   @column()
   declare branchId: string
 
@@ -142,6 +152,10 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
   @column()
   declare importLastReqDt: string
+
+  // F-48: EJ (Electronic Journal) report delta sync tracking
+  @column()
+  declare ejLastReqDt: string | null
 
   @column()
   declare lastCustomerNo: number

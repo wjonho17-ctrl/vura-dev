@@ -1,5 +1,7 @@
 import Branch from '#models/branch'
+import User from '#models/user'
 import CatchEbmAndAllError from '#helpers/classes/catch_ebm_and_all_error'
+import { EbmDeviceService } from '#services/ebm/ebm_device_service'
 import type { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
 
@@ -86,9 +88,28 @@ export default class AdminBranchesController extends CatchEbmAndAllError {
       const payload = await request.validateUsing(updateValidator)
       branch.merge({
         ...payload,
-        userId: payload.userId || null,
+        userId: payload.userId ?? branch.userId,
       } as any)
       await branch.save()
+
+      // §2.4 — notify EBM of branch settings change (fire-and-forget)
+      // Looks up the operator on this branch to supply device credentials
+      User.query()
+        .where('tin', branch.tin)
+        .where('branch_id', branch.branchId)
+        .first()
+        .then(user => {
+          if (!user) return
+          return new EbmDeviceService().saveDeviceInfo({
+            tin: user.tin,
+            branchId: branch.branchId,
+            deviceSerialNo: user.serialNo,
+            mrcNo: user.mrc,
+            sdcId: user.sdcId,
+          })
+        })
+        .catch(err => console.warn('[saveDeviceInfo] branch update notify failed (non-critical):', err?.resultMsg ?? err))
+
       return branch
     } catch (error) {
       return this.catchErrors(response, error)

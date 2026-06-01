@@ -5,6 +5,7 @@ import { getTaxAmountByType, getTaxRateByType } from '#helpers/ebm_helper'
 import Item from '#models/item'
 import ItemComposition from '#models/item_composition'
 import Stock from '#models/stock'
+import Branch from '#models/branch'
 import StockMaster from '#models/stock_master'
 import User from '#models/user'
 import { EbmService } from '#services/ebm/ebm_service'
@@ -342,6 +343,19 @@ export default class UserBranchesController extends CatchEbmAndAllError {
     }
   }
 
+  async items_composition_list({ request, response, auth }: HttpContext) {
+    try {
+      const user = auth.user as User
+      const code = request.param('code')
+      const compositions = await ItemComposition.query()
+        .where('item_code', code)
+        .where('user_id', user.id)
+      return compositions
+    } catch (error) {
+      return this.catchErrors(response, error)
+    }
+  }
+
   async items_composition_save({ request, response, auth }: HttpContext) {
     const payload = await request.validateUsing(saveItemCompositionValidator)
 
@@ -392,6 +406,27 @@ export default class UserBranchesController extends CatchEbmAndAllError {
   }
 
   //#region stocks
+  async stocks_master_list({ request, auth }: HttpContext) {
+    const { page, perPage } = await request.validateUsing(listRequestValidator)
+    const user = auth.user as User
+    const masters = await user.related('stockMasters').query()
+      .orderBy('item_code', 'asc')
+      .paginate(page || 1, perPage || 50)
+
+    // Enrich with item names
+    const codes = masters.all().map(m => m.itemCode)
+    const items = await Item.query().whereIn('code', codes)
+    const nameMap = new Map(items.map(i => [i.code, i.name]))
+
+    return {
+      meta: masters.getMeta(),
+      data: masters.all().map(m => ({
+        ...m.toJSON(),
+        itemName: nameMap.get(m.itemCode) || m.itemCode,
+      }))
+    }
+  }
+
   async stocks_list({ request, auth }: HttpContext) {
     const { page, perPage } = await request.validateUsing(listRequestValidator)
     const user = auth.user as User
@@ -616,6 +651,7 @@ export default class UserBranchesController extends CatchEbmAndAllError {
       const ebmItemData: InventoryItem = {
         ...payload,
         tin: user.tin,
+        stockTyCd: payload.stockTyCd ?? '3',
         registrantId: user.tin.toString(),
         registrantName: user.taxPayerName,
         modifierId: user.tin.toString(),
@@ -656,6 +692,100 @@ export default class UserBranchesController extends CatchEbmAndAllError {
       const stockAdded = await StockAction.syncStockItems(user)
 
       return { stockAdded }
+    } catch (error) {
+      return this.catchErrors(response, error)
+    }
+  }
+
+  // F-20 §9.4 — Internal stock transfer between branches under the same TIN
+  async stocks_transfer({ request, response, auth }: HttpContext) {
+    try {
+      const user = auth.user as User
+      const { itemCode, quantity, toBranchId, remark } = request.only(['itemCode', 'quantity', 'toBranchId', 'remark'])
+
+      if (!itemCode || !quantity || !toBranchId) {
+        return response.badRequest({ error: 'itemCode, quantity and toBranchId are required' })
+      }
+      if (toBranchId === user.branchId) {
+        return response.badRequest({ error: 'Source and destination branch must be different' })
+      }
+
+      // Verify destination branch shares the same TIN
+      const destBranch = await Branch.query().where('tin', String(user.tin)).where('branch_id', toBranchId).first()
+      if (!destBranch) {
+        return response.badRequest({ error: 'Destination branch not found or belongs to a different TIN' })
+      }
+
+      // Check available stock at source
+      const sourceMaster = await user.related('stockMasters').query().where('item_code', itemCode).first()
+      if (!sourceMaster || sourceMaster.remainQuantity < Number(quantity)) {
+        return response.badRequest({ error: `Insufficient stock. Available: ${sourceMaster?.remainQuantity ?? 0}` })
+      }
+
+      const transferRemark = remark || '02'
+
+      // OUT from source branch
+      const newSourceQty = sourceMaster.remainQuantity - Number(quantity)
+      const outData: InventoryItem = {
+        tin: user.tin, branchId: user.branchId, itemCode,
+        remainQuantity: newSourceQty, stockTyCd: '3',
+        registrantId: user.tin.toString(), registrantName: user.taxPayerName,
+        modifierId: user.tin.toString(), modifierName: user.taxPayerName,
+        deviceSerialNo: user.serialNo,
+      }
+      const outRes = await new EbmStocksService(user).saveStockMaster(outData) as EbmDefaultResponse
+      if (outRes.resultCd !== EbmApiResponseCode.ServerSucceeded) {
+        return response.badRequest({ error: `EBM OUT failed: ${outRes.resultMsg}` })
+      }
+      await sourceMaster.merge({ remainQuantity: newSourceQty }).save()
+
+      // IN at destination branch
+      const destMaster = await StockMaster.query()
+        .where('item_code', itemCode).where('branch_id', toBranchId).first()
+      const newDestQty = (destMaster?.remainQuantity ?? 0) + Number(quantity)
+
+      const inData: InventoryItem = {
+        tin: user.tin, branchId: toBranchId, itemCode,
+        remainQuantity: newDestQty, stockTyCd: '3',
+        registrantId: user.tin.toString(), registrantName: user.taxPayerName,
+        modifierId: user.tin.toString(), modifierName: user.taxPayerName,
+        deviceSerialNo: user.serialNo,
+      }
+      const inRes = await new EbmStocksService(user).saveStockMaster(inData) as EbmDefaultResponse
+      if (inRes.resultCd !== EbmApiResponseCode.ServerSucceeded) {
+        return response.badRequest({ error: `EBM IN failed: ${inRes.resultMsg}` })
+      }
+
+      if (destMaster) {
+        await destMaster.merge({ remainQuantity: newDestQty }).save()
+      } else {
+        await StockMaster.create({
+          itemCode, branchId: toBranchId, remainQuantity: newDestQty,
+          tin: user.tin.toString(),
+          registrantId: user.tin.toString(), registrantName: user.taxPayerName,
+          modifierId: user.tin.toString(), modifierName: user.taxPayerName,
+          originalStoredAndReleaseNo: 0,
+        })
+      }
+
+      return {
+        success: true,
+        message: `Transferred ${quantity} units of ${itemCode} → branch ${toBranchId}`,
+        sourceBranch: user.branchId, destBranch: toBranchId,
+        itemCode, quantity: Number(quantity), remark: transferRemark,
+      }
+    } catch (error) {
+      return this.catchErrors(response, error)
+    }
+  }
+
+  // F-11 §5.2 — Pull items registered in EBM that are not yet in local DB
+  // Uses delta sync via user.itemLastReqDt — only new/changed items since last sync
+  async items_sync({ response, auth }: HttpContext) {
+    try {
+      const user = auth.user as User
+      const itemsSynced = await StockAction.syncItems(user)
+      return { itemsSynced }
     } catch (error) {
       return this.catchErrors(response, error)
     }

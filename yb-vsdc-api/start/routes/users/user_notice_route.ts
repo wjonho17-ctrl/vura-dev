@@ -6,6 +6,8 @@ const UserNoticesController = () => import('#controllers/users/users_notices_con
 router
   .group(() => {
     router.get('/', [UserNoticesController, 'select'])
+    router.get('/selectNotices/:branchId', [UserNoticesController, 'selectNotices'])
+    router.post('/selectNotices/:branchId', [UserNoticesController, 'selectNotices'])
   })
   .prefix('/notices')
   .middleware(middleware.auth({ guards: ['api'] }))

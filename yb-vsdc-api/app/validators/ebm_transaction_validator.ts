@@ -13,11 +13,26 @@ export const saleSaveValidator = vine.compile(
   vine.object({
     customerTin: vine.number().optional().requiredIfExists('purchaseCode'),
     customerName: vine.string(),
+    customerMobileNo: vine.string().optional(),
     purchaseCode: vine.string().optional().requiredIfExists('customerTin'), // purchase code needed only when selling to business
     paymentMethod: vine.enum(Object.values(EbmPaymentMethod)),
+    paymentBreakdown: vine.array( // F-28: Mixed payment breakdown — e.g., [{method: '01', amount: 500}, {method: '05', amount: 1500}]
+      vine.object({
+        method: vine.string().maxLength(2),
+        amount: vine.number().positive(),
+      })
+    ).optional(),
+    currencyCode: vine.string().maxLength(3).toUpperCase().optional(), // ISO 4217 currency code (USD, EUR, etc.) — optional, defaults to RWF
+    originalAmount: vine.number().positive().optional().requiredIfExists('currencyCode'), // Amount in original currency if foreign currency used
     saleStatus: vine.enum(Object.values(EbmTransactionProgress)),
     confirmationDate: lastRequestDateValidatorObject, // Date in the format 'yyyy-MM-dd HH:mm:ss'
     saleDate: vine.string().regex(/\d{4}-\d{2}-\d{2}/), // Date in the format 'yyyy-MM-dd'
+
+    expectedPaymentDate: vine.string().regex(/\d{4}-\d{2}-\d{2}/).optional(), // F-29: Expected payment date for credit sales (yyyy-MM-dd)
+
+    exportDate: vine.string().regex(/\d{4}-\d{2}-\d{2}/).optional(), // F-32: Export date (yyyy-MM-dd) — required if selling to export
+    exportDocumentRef: vine.string().maxLength(50).optional().requiredIfExists('exportDate'), // F-32: Export document reference (customs doc, bill of lading, etc.)
+    exportCountryCode: vine.string().fixedLength(2).toUpperCase().optional().requiredIfExists('exportDate'), // F-32: ISO 3166-1 country code (e.g., US, TZ, UG)
 
     stockReleaseDate: lastRequestDateValidatorObject.optional(), // Optional field for stock release date
 
@@ -103,6 +118,7 @@ export const saleTrainingValidator = vine.compile(
   vine.object({
     customerTin: vine.number().optional(),
     customerName: vine.string(),
+    customerMobileNo: vine.string().optional(),
     purchaseCode: vine.string().optional(), // Optional field for purchase code
     paymentMethod: vine.enum(Object.values(EbmPaymentMethod)), // Optional payment method enum
     confirmationDate: lastRequestDateValidatorObject, // Date in the format 'yyyy-MM-dd HH:mm:ss'
@@ -168,6 +184,7 @@ export const saleProformaValidator = vine.compile(
   vine.object({
     customerTin: vine.number().optional(),
     customerName: vine.string(),
+    customerMobileNo: vine.string().optional(),
     purchaseCode: vine.string().optional(), // Optional field for purchase code
     paymentMethod: vine.enum(Object.values(EbmPaymentMethod)), // Optional payment method enum
     confirmationDate: lastRequestDateValidatorObject, // Date in the format 'yyyy-MM-dd HH:mm:ss'
@@ -308,6 +325,14 @@ export const savePurchaseValidator = vine.compile(
     remark: vine.string().optional(),
 
     itemList: vine.array(purchaseItemSchema),
+  })
+)
+
+export const purchaseRefundValidator = vine.compile(
+  vine.object({
+    purchaseId: vine.string(), // F-36: Original purchase ID to refund
+    refundReason: vine.string().optional(), // F-36: Why the goods are being returned
+    itemList: vine.array(purchaseItemSchema).optional(), // F-36: Items being returned (subset of original purchase)
   })
 )
 

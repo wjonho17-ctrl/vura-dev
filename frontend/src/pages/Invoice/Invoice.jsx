@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AppShell from '../../components/layout/AppShell'
+import { useApp } from '../../context/AppContext'
 import { operatorApi } from '../../api/operator'
 import { logActivity } from '../../hooks/useActivityLog'
-import RraLogo from '../../components/ui/RraLogo'
+import NormalSaleReceipt from '../../components/receipts/NormalSaleReceipt'
+import A4InvoiceTemplate from '../../components/receipts/A4InvoiceTemplate'
 
 const PAYMENT_METHODS = [
   { v: '01', l: 'Cash' }, { v: '02', l: 'Credit' }, { v: '03', l: 'Cash/Credit' },
@@ -39,6 +41,7 @@ function SaleLabel({ saleType, receiptType }) {
 
 export default function Invoice() {
   const navigate = useNavigate()
+  const { rawUser } = useApp()
 
   const [sales,    setSales]    = useState([])
   const [meta,     setMeta]     = useState(null)
@@ -62,14 +65,19 @@ export default function Invoice() {
 
   const [receiptSale,  setReceiptSale]  = useState(null)
   const [receiptExtra, setReceiptExtra] = useState(null)
-  const [receiptMode,  setReceiptMode]  = useState('A4')
+  const [receiptMode,  setReceiptMode]  = useState('Thermal')
 
   function openReceipt(sale) {
     setReceiptSale(sale)
-    setReceiptExtra(null)
-    operatorApi.receiptById(sale.id)
-      .then(data => setReceiptExtra(data))
-      .catch(() => {})
+    // Extract MRC, SDC info from sale's ebmSaleData if available
+    const receiptData = {
+      mrcNo: sale.ebmSaleData?.mrcNo || sale.mrcNo || '—',
+      sdcId: sale.ebmSaleData?.sdcId || sale.sdcId || '—',
+      internalData: sale.ebmSaleData?.intrlData || sale.intrlData || sale.ebmSaleData?.internalData || '—',
+      signature: sale.ebmSaleData?.rcptSign || sale.signature || '—',
+    }
+    console.log('Receipt sale data:', { mrc: receiptData.mrcNo, sdc: receiptData.sdcId, sig: receiptData.signature })
+    setReceiptExtra(receiptData)
   }
 
   const load = useCallback(async (page = 1) => {
@@ -294,166 +302,162 @@ export default function Invoice() {
 
         {/* Receipt modal */}
         {receiptSale && (
-          <div className="modal-backdrop" onClick={() => setReceiptSale(null)}>
-            <div className="modal" style={{ maxWidth: receiptMode === 'A4' ? 880 : 420, borderRadius: 16 }} onClick={e => e.stopPropagation()}>
-              <div className="modal__head" style={{ borderBottom: '1px solid var(--ink-100)', padding: '16px 24px' }}>
-                <div className="tab-bar tab-bar--sm">
-                  <button className={receiptMode === 'A4' ? 'is-active' : ''} onClick={() => setReceiptMode('A4')}>A4 Invoice</button>
-                  <button className={receiptMode === 'Thermal' ? 'is-active' : ''} onClick={() => setReceiptMode('Thermal')}>Thermal 80mm</button>
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="btn btn--sm" onClick={printReceipt}>Print / PDF</button>
-                  <button className="modal__close" onClick={() => setReceiptSale(null)}>✕</button>
-                </div>
+          <div
+            className="modal-backdrop"
+            onClick={() => setReceiptSale(null)}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 1000,
+              animation: 'fadeIn 0.3s ease-in-out',
+              overflowY: 'auto'
+            }}
+          >
+            <style>{`
+              @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+              }
+              @keyframes slideUp {
+                from {
+                  opacity: 0;
+                  transform: translateY(20px) scale(0.95);
+                }
+                to {
+                  opacity: 1;
+                  transform: translateY(0) scale(1);
+                }
+              }
+            `}</style>
+            <div
+              style={{
+                position: 'relative',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                padding: '40px 20px',
+                animation: 'slideUp 0.4s ease-out'
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+
+              {/* Floating Print Button */}
+              <button
+                className="btn btn--primary"
+                onClick={printReceipt}
+                style={{
+                  position: 'fixed',
+                  top: 20,
+                  right: 20,
+                  zIndex: 1001,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                }}
+              >
+                🖨️ Print / PDF
+              </button>
+
+              {/* Template Switcher */}
+              <div
+                style={{
+                  position: 'fixed',
+                  top: 20,
+                  left: 20,
+                  zIndex: 1001,
+                  display: 'flex',
+                  gap: 8,
+                  background: 'rgba(255,255,255,0.95)',
+                  borderRadius: '8px',
+                  padding: '8px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                }}
+              >
+                <button
+                  onClick={() => setReceiptMode('Thermal')}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontWeight: receiptMode === 'Thermal' ? 700 : 400,
+                    background: receiptMode === 'Thermal' ? '#0055A4' : '#e5e7eb',
+                    color: receiptMode === 'Thermal' ? '#fff' : '#333',
+                    fontSize: '13px',
+                  }}
+                >
+                  Thermal 80mm
+                </button>
+                <button
+                  onClick={() => setReceiptMode('A4')}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontWeight: receiptMode === 'A4' ? 700 : 400,
+                    background: receiptMode === 'A4' ? '#0055A4' : '#e5e7eb',
+                    color: receiptMode === 'A4' ? '#fff' : '#333',
+                    fontSize: '13px',
+                  }}
+                >
+                  A4 Invoice
+                </button>
               </div>
 
-              <div className="modal__body" id="receipt-content" style={{ padding: receiptMode === 'A4' ? '40px 48px' : '24px', background: '#fff', color: '#000' }}>
-                {receiptMode === 'A4' ? (
-                  <div style={{ fontFamily: 'Arial, sans-serif' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 40, borderBottom: '2px solid #0055A4', paddingBottom: 24 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-                        <RraLogo size={80} />
-                        <div style={{ borderLeft: '1px solid #e2e8f0', paddingLeft: 24 }}>
-                          <h1 style={{ margin: 0, color: '#0055A4', fontSize: 26, letterSpacing: '-0.02em' }}>{receiptSale.registrantName}</h1>
-                          <div style={{ fontSize: 13, marginTop: 4, color: '#444' }}>TIN: <b>{receiptSale.tin}</b> | MRC: <b>{receiptExtra?.mrcNo || '—'}</b></div>
-                          <div style={{ fontSize: 13, color: '#666' }}>{receiptSale.receipt?.address || 'Kigali, Rwanda'}</div>
-                        </div>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 32, fontWeight: 900, color: '#0055A4', opacity: 0.1, marginBottom: -10 }}>INVOICE</div>
-                        <div style={{ fontSize: 16, fontWeight: 700 }}>No: {receiptSale.invoiceNo}</div>
-                        <div style={{ fontSize: 13, color: '#666', marginTop: 4 }}>Date: {receiptSale.saleDate}</div>
-                        <div style={{ marginTop: 10 }}><SaleLabel saleType={receiptSale.saleType} receiptType={receiptSale.receiptType} /></div>
-                      </div>
-                    </div>
+              {/* Close Button */}
+              <button
+                onClick={() => setReceiptSale(null)}
+                style={{
+                  position: 'fixed',
+                  top: 20,
+                  right: 80,
+                  zIndex: 1001,
+                  background: '#e5e7eb',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: 40,
+                  height: 40,
+                  fontSize: 20,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                ✕
+              </button>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, marginBottom: 32 }}>
-                      <div style={{ background: '#f8fafc', padding: 20, borderRadius: 12, border: '1px solid #e2e8f0' }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: 8 }}>Customer Details</div>
-                        <div style={{ fontSize: 16, fontWeight: 700 }}>{receiptSale.customerName || 'Walk-in Customer'}</div>
-                        {receiptSale.customerTin && <div style={{ fontSize: 13, marginTop: 4 }}>TIN: <b>{receiptSale.customerTin}</b></div>}
-                      </div>
-                      <div style={{ background: '#f8fafc', padding: 20, borderRadius: 12, border: '1px solid #e2e8f0' }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: 8 }}>Payment Info</div>
-                        <div style={{ fontSize: 14 }}>Method: <b>{PAYMENT_METHODS.find(p => p.v === receiptSale.paymentMethod)?.l}</b></div>
-                        <div style={{ fontSize: 14, marginTop: 4 }}>Status: <b style={{ color: '#16a34a' }}>PAID</b></div>
-                      </div>
-                    </div>
-
-                    <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 24 }}>
-                      <thead>
-                        <tr style={{ background: '#0055A4', color: '#fff' }}>
-                          {['No','Description','Qty','Unit Price','Discount','Total'].map(h => (
-                            <th key={h} style={{ padding: '12px 15px', textAlign: h === 'No' || h === 'Description' ? 'left' : 'right', border: 'none' }}>{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(receiptSale.items?.data || []).map((item, i) => (
-                          <tr key={i} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                            <td style={{ padding: '12px 15px' }}>{i + 1}</td>
-                            <td style={{ padding: '12px 15px' }}>
-                              <div style={{ fontWeight: 600 }}>{item.name}</div>
-                              <div style={{ fontSize: 10, color: '#666' }}>Code: {item.code} | Tax: {item.taxationType}</div>
-                            </td>
-                            <td style={{ padding: '12px 15px', textAlign: 'right' }}>{item.quantity} {item.quantityUnit}</td>
-                            <td style={{ padding: '12px 15px', textAlign: 'right' }}>{Number(item.price).toLocaleString()}</td>
-                            <td style={{ padding: '12px 15px', textAlign: 'right', color: '#dc2626' }}>{Number(item.discountAmount || 0).toLocaleString()}</td>
-                            <td style={{ padding: '12px 15px', textAlign: 'right', fontWeight: 700 }}>{Number(item.totalAmount || (item.quantity * item.price)).toLocaleString()}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div style={{ width: '50%' }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: 10 }}>Tax Analysis Summary</div>
-                        <table style={{ width: '100%', fontSize: 11, border: '1px solid #e2e8f0' }}>
-                          <thead>
-                            <tr style={{ background: '#f1f5f9' }}>
-                              <th style={{ padding: 6 }}>Type</th>
-                              <th style={{ padding: 6, textAlign: 'right' }}>Taxable</th>
-                              <th style={{ padding: 6, textAlign: 'right' }}>Tax Amt</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {[['A','taxableAmountA','taxAmountA'],['B','taxableAmountB','taxAmountB'],['C','taxableAmountC','taxAmountC'],['D','taxableAmountD','taxAmountD']]
-                              .filter(([,ta]) => Number(receiptSale[ta]) > 0)
-                              .map(([type, ta, tx]) => (
-                                <tr key={type}>
-                                  <td style={{ padding: 6 }}>Category {type}</td>
-                                  <td style={{ padding: 6, textAlign: 'right' }}>{Number(receiptSale[ta]).toLocaleString()}</td>
-                                  <td style={{ padding: 6, textAlign: 'right' }}>{Number(receiptSale[tx]).toLocaleString()}</td>
-                                </tr>
-                              ))}
-                          </tbody>
-                        </table>
-                      </div>
-                      <div style={{ width: '40%' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e2e8f0' }}>
-                          <span style={{ color: '#64748b' }}>Subtotal</span>
-                          <span style={{ fontWeight: 600 }}>{(Number(receiptSale.totalAmount) - Number(receiptSale.totalTaxAmount)).toLocaleString()}</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e2e8f0' }}>
-                          <span style={{ color: '#64748b' }}>Total VAT</span>
-                          <span style={{ fontWeight: 600 }}>{Number(receiptSale.totalTaxAmount).toLocaleString()}</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', background: '#f8fafc', margin: '8px 0', borderRadius: 8 }}>
-                          <span style={{ fontWeight: 700, paddingLeft: 12 }}>GRAND TOTAL</span>
-                          <span style={{ fontWeight: 900, color: '#0055A4', paddingRight: 12, fontSize: 18 }}>{Number(receiptSale.totalAmount).toLocaleString()} RWF</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{ marginTop: 48, display: 'flex', gap: 32, alignItems: 'center', borderTop: '1px dashed #e2e8f0', paddingTop: 32 }}>
-                      <img src={qrUrl} alt="Verification QR" style={{ width: 100, height: 100, border: '4px solid #f1f5f9', borderRadius: 8 }} />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: 4 }}>Verification Signature</div>
-                        <div style={{ fontSize: 12, fontFamily: 'monospace', wordBreak: 'break-all', background: '#f1f5f9', padding: 8, borderRadius: 4 }}>
-                          {receiptExtra?.signature || receiptSale.ebmSaleData?.rcptSign || 'WAITING_FOR_SIGNATURE'}
-                        </div>
-                        <div style={{ fontSize: 11, color: '#64748b', marginTop: 8 }}>
-                          Scan the QR code or visit RRA portal to verify this legal document.
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+              <div
+                id="receipt-content"
+                style={{
+                  background: '#fff',
+                  borderRadius: '16px',
+                  boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+                  overflow: 'hidden',
+                  padding: '0',
+                  maxHeight: '90vh',
+                  overflowY: 'auto'
+                }}
+              >
+                {receiptMode === 'Thermal' ? (
+                  <NormalSaleReceipt receiptSale={receiptSale} receiptExtra={receiptExtra} qrUrl={qrUrl}/>
                 ) : (
-                  <div style={{ fontFamily: 'monospace', fontSize: 13, textAlign: 'center' }}>
-                    <RraLogo size={50} type="mono" />
-                    <div style={{ fontWeight: 700, fontSize: 15, margin: '8px 0' }}>{receiptSale.registrantName}</div>
-                    <div>TIN: {receiptSale.tin}</div>
-                    <div style={{ margin: '10px 0', borderTop: '1px dashed #000', borderBottom: '1px dashed #000', padding: '5px 0' }}>
-                      <b>{receiptSale.saleType}{receiptSale.receiptType} RECEIPT</b>
-                    </div>
-                    <div style={{ textAlign: 'left', margin: '10px 0' }}>
-                      <div>No: {receiptSale.invoiceNo}</div>
-                      <div>Date: {receiptSale.saleDate}</div>
-                      <div>Cust: {receiptSale.customerName || 'Walk-in'}</div>
-                    </div>
-                    <div style={{ borderBottom: '1px solid #000', margin: '10px 0' }} />
-                    <table style={{ width: '100%', fontSize: 12 }}>
-                      <tbody>
-                        {(receiptSale.items?.data || []).map((item, i) => (
-                          <tr key={i}>
-                            <td style={{ textAlign: 'left' }}>{item.name}</td>
-                            <td style={{ textAlign: 'right' }}>{item.quantity} x {Number(item.price).toLocaleString()}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    <div style={{ borderTop: '1px solid #000', margin: '10px 0', paddingTop: 10 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 700 }}>
-                        <span>TOTAL</span><span>{Number(receiptSale.totalAmount).toLocaleString()}</span>
-                      </div>
-                    </div>
-                    <div style={{ marginTop: 20 }}>
-                      <img src={qrUrl} alt="QR" style={{ width: 120 }} />
-                      <div style={{ fontSize: 10, marginTop: 10, wordBreak: 'break-all' }}>
-                        {receiptExtra?.signature || receiptSale.ebmSaleData?.rcptSign}
-                      </div>
-                    </div>
-                  </div>
+                  <A4InvoiceTemplate
+                    receiptSale={receiptSale}
+                    receiptExtra={receiptExtra}
+                    qrUrl={qrUrl}
+                    businessName={rawUser?.taxPayerName}
+                    businessAddress={rawUser?.address}
+                    businessPhone={rawUser?.phoneNumber || rawUser?.phone}
+                    businessEmail={rawUser?.email}
+                    businessTin={rawUser?.tin}
+                  />
                 )}
               </div>
             </div>

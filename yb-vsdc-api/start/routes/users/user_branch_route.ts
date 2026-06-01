@@ -6,8 +6,10 @@ const UserBranchesController = () => import('#controllers/users/user_branches_co
 router
   .group(() => {
     router.get('/', [UserBranchesController, 'list'])
-    
+
     router.get('/find', [UserBranchesController, 'find'])
+    router.get('/selectBranches/:branchId', [UserBranchesController, 'selectBranches'])
+    router.post('/selectBranches/:branchId', [UserBranchesController, 'selectBranches'])
 
     router.post('/users/save', [UserBranchesController, 'save_branch_user'])
     router.put('/users/update', [UserBranchesController, 'update_branch_user'])
