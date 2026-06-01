@@ -35,10 +35,13 @@ export default function NewInvoice() {
 
   const [saleMode, setSaleMode] = useState('normal')
   const [saleForm, setSaleForm] = useState({
-    customerName: '', customerPhone: '', customerTin: '', purchaseCode: '',
+    customerName: '', customerMobileNo: '', customerTin: '', purchaseCode: '',
     paymentMethod: '01', saleDate: new Date().toISOString().slice(0, 10),
-    itemsReceived: 'Y', remark: '',
+    itemsReceived: 'Y', remark: '', currencyCode: 'RWF', originalAmount: null,
+    expectedPaymentDate: null, // F-29: Credit sales
+    exportDate: null, exportDocumentRef: '', exportCountryCode: '', // F-32: Export sales
   })
+  const [paymentBreakdown, setPaymentBreakdown] = useState([]) // F-28: Mixed payment breakdown
   const [saleItems, setSaleItems] = useState([{ ...EMPTY_ITEM }])
   const [saving,    setSaving]    = useState(false)
   const [saleErr,   setSaleErr]   = useState(null)
@@ -51,8 +54,54 @@ export default function NewInvoice() {
   const [pcLoading,  setPcLoading]  = useState(false)
   const [pcMsg,      setPcMsg]      = useState(null)
 
+  const [exchangeRates, setExchangeRates] = useState([])
+  const [ratesLoading, setRatesLoading] = useState(false)
+
+  const [customerLookup, setCustomerLookup] = useState(null) // F-43: TIN lookup result
+  const [tinLookupLoading, setTinLookupLoading] = useState(false)
+
   const [hasDraft,     setHasDraft]     = useState(() => !!localStorage.getItem(DRAFT_KEY))
   const [draftSavedAt, setDraftSavedAt] = useState(null)
+
+  useEffect(() => {
+    setRatesLoading(true)
+    operatorApi.getExchangeRates()
+      .then(res => setExchangeRates(res?.data || res || []))
+      .catch(() => setExchangeRates([]))
+      .finally(() => setRatesLoading(false))
+  }, [])
+
+  // F-43: Debounced TIN lookup
+  useEffect(() => {
+    if (!saleForm.customerTin || saleForm.customerTin.length < 15) {
+      setCustomerLookup(null)
+      return
+    }
+
+    const tinStr = String(saleForm.customerTin).trim()
+    if (!/^\d{15}$/.test(tinStr)) {
+      setCustomerLookup({ error: 'Invalid TIN format (must be 15 digits)' })
+      return
+    }
+
+    setTinLookupLoading(true)
+    const timer = setTimeout(() => {
+      operatorApi.lookupCustomerByTin(tinStr)
+        .then(res => {
+          if (res.found) {
+            // F-43: Auto-fill customer name from lookup
+            setSaleForm(f => ({ ...f, customerName: res.name }))
+            setCustomerLookup(res)
+          } else {
+            setCustomerLookup(res)
+          }
+        })
+        .catch(err => setCustomerLookup({ error: err.message || 'TIN lookup failed' }))
+        .finally(() => setTinLookupLoading(false))
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [saleForm.customerTin])
 
   function saveDraft() {
     const draft = { saleForm, saleItems, saleMode, savedAt: new Date().toISOString() }
@@ -80,9 +129,10 @@ export default function NewInvoice() {
   }
 
   function resetForm() {
-    setSaleForm({ customerName: '', customerPhone: '', customerTin: '', purchaseCode: '', paymentMethod: '01', saleDate: new Date().toISOString().slice(0, 10), itemsReceived: 'Y', remark: '' })
+    setSaleForm({ customerName: '', customerMobileNo: '', customerTin: '', purchaseCode: '', paymentMethod: '01', saleDate: new Date().toISOString().slice(0, 10), itemsReceived: 'Y', remark: '', currencyCode: 'RWF', originalAmount: null, expectedPaymentDate: null, exportDate: null, exportDocumentRef: '', exportCountryCode: '' })
     setSaleItems([{ ...EMPTY_ITEM }])
     setItemSearches([{ q: '', results: [], busy: false }])
+    setPaymentBreakdown([])
     setSaleMode('normal')
     setSaleResult(null)
     setSaleErr(null)
@@ -136,6 +186,14 @@ export default function NewInvoice() {
   async function handleSale(e) {
     e.preventDefault()
     setSaleErr(null); setSaving(true); setSaleResult(null)
+
+    // Validate originalAmount for non-RWF currencies
+    if (saleForm.currencyCode && saleForm.currencyCode !== 'RWF' && !saleForm.originalAmount) {
+      setSaleErr(`Please enter the original amount in ${saleForm.currencyCode}`)
+      setSaving(false)
+      return
+    }
+
     try {
       const now = new Date().toISOString()
       const payload = {
@@ -145,6 +203,12 @@ export default function NewInvoice() {
         confirmationDate: toEbmDate(now),
         saleDate: saleForm.saleDate,
         itemsReceived: saleForm.itemsReceived,
+        currencyCode: saleForm.currencyCode || 'RWF',
+        paymentBreakdown: paymentBreakdown.length > 0 ? paymentBreakdown : null, // F-28: Mixed payment breakdown
+        expectedPaymentDate: saleForm.paymentMethod === '02' ? saleForm.expectedPaymentDate : null, // F-29: Credit sales
+        exportDate: saleForm.exportDate || null, // F-32: Export sales
+        exportDocumentRef: saleForm.exportDate ? saleForm.exportDocumentRef : null, // F-32: Export document reference
+        exportCountryCode: saleForm.exportDate ? saleForm.exportCountryCode : null, // F-32: Export country code
         receipt: {
           address: rawUser?.address || '',
           bottomMessage: 'Thank you',
@@ -167,8 +231,19 @@ export default function NewInvoice() {
         payload.customerTin = Number(saleForm.customerTin)
         if (saleForm.purchaseCode) payload.purchaseCode = saleForm.purchaseCode
       }
-      if (saleForm.customerPhone) payload.remark = [saleForm.remark, `Tel: ${saleForm.customerPhone}`].filter(Boolean).join(' | ')
-      else if (saleForm.remark) payload.remark = saleForm.remark
+      if (saleForm.customerMobileNo) payload.customerMobileNo = saleForm.customerMobileNo
+      // Always include originalAmount (required by backend)
+      if (saleForm.currencyCode === 'RWF') {
+        // For RWF, use the total amount
+        payload.originalAmount = payload.items.reduce((sum, item) => sum + (item.quantity * item.price), 0)
+      } else if (saleForm.originalAmount) {
+        // For other currencies, use the entered amount
+        payload.originalAmount = Number(saleForm.originalAmount)
+      } else {
+        // Fallback: calculate from items
+        payload.originalAmount = payload.items.reduce((sum, item) => sum + (item.quantity * item.price), 0)
+      }
+      if (saleForm.remark) payload.remark = saleForm.remark
 
       const fn = saleMode === 'training' ? operatorApi.trainingSale
                : saleMode === 'proforma' ? operatorApi.proformaSale
@@ -228,6 +303,11 @@ export default function NewInvoice() {
               </div>
               <div style={{ fontSize: 13, color: '#166534', marginTop: 6 }}>
                 Total: <b>{Number(saleResult.totalAmount || 0).toLocaleString()} RWF</b>
+                {saleResult.currencyCode && saleResult.currencyCode !== 'RWF' && saleResult.originalAmount && (
+                  <>
+                    &nbsp;(<b>{Number(saleResult.originalAmount).toLocaleString()} {saleResult.currencyCode}</b> @ {Number(saleResult.exchangeRate).toFixed(4)})
+                  </>
+                )}
                 &nbsp;·&nbsp;VAT: {Number(saleResult.totalTaxAmount || 0).toLocaleString()} RWF
                 &nbsp;·&nbsp;Type: {saleResult.saleType}{saleResult.receiptType}
               </div>
@@ -267,20 +347,48 @@ export default function NewInvoice() {
                 <div className="form-group">
                   <label className="form-label" htmlFor="custPhone">Phone Number</label>
                   <input id="custPhone" className="form-input input--mono" placeholder="07XXXXXXXX" maxLength={12}
-                    value={saleForm.customerPhone} onChange={e => setSaleForm(f => ({ ...f, customerPhone: e.target.value }))} />
+                    value={saleForm.customerMobileNo} onChange={e => setSaleForm(f => ({ ...f, customerMobileNo: e.target.value }))} />
                 </div>
                 <div className="form-group" style={{ position: 'relative' }}>
                   <label className="form-label" htmlFor="custTin" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span>TIN <span style={{ fontSize: 11, color: 'var(--ink-400)', fontWeight: 400 }}>(optional — B2B)</span></span>
                     {saleForm.customerTin && (
                       <button type="button" className="btn btn--xs" style={{ fontSize: 11, padding: '1px 8px' }}
-                        onClick={() => { setPcPanel(p => !p); setPcMsg(null); if (!pcBuyerTel && saleForm.customerPhone) setPcBuyerTel(saleForm.customerPhone) }}>
+                        onClick={() => { setPcPanel(p => !p); setPcMsg(null); if (!pcBuyerTel && saleForm.customerMobileNo) setPcBuyerTel(saleForm.customerMobileNo) }}>
                         {pcPanel ? 'Close' : 'Get Code'}
                       </button>
                     )}
                   </label>
                   <input id="custTin" className="form-input input--mono" placeholder="111111111" type="number"
                     value={saleForm.customerTin} onChange={e => setSaleForm(f => ({ ...f, customerTin: e.target.value }))} />
+                  {/* F-43: Customer TIN Sync — show lookup result */}
+                  {tinLookupLoading && saleForm.customerTin && saleForm.customerTin.length === 15 && (
+                    <div style={{ fontSize: 11, color: 'var(--ink-500)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', border: '2px solid var(--brand)', borderTopColor: 'transparent', animation: 'spin 0.6s linear infinite' }} />
+                      Looking up customer…
+                    </div>
+                  )}
+                  {customerLookup && !tinLookupLoading && (
+                    <div style={{ fontSize: 11, marginTop: 4, padding: 6, borderRadius: 4, background: customerLookup.found ? '#dcfce7' : '#fef3c7', border: `1px solid ${customerLookup.found ? '#86efac' : '#fde047'}`, color: customerLookup.found ? '#166534' : '#854d0e' }}>
+                      {customerLookup.found ? (
+                        <>
+                          <div style={{ fontWeight: 600, marginBottom: 2 }}>✓ Found in RRA Database</div>
+                          <div>Name: <strong>{customerLookup.name}</strong></div>
+                          {customerLookup.location && <div style={{ fontSize: 10, marginTop: 2, color: 'inherit', opacity: 0.8 }}>{customerLookup.location}</div>}
+                        </>
+                      ) : (
+                        <>
+                          <div style={{ fontWeight: 600, marginBottom: 2 }}>⚠ Not found in RRA Database</div>
+                          <div style={{ fontSize: 10 }}>{customerLookup.message}</div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  {customerLookup?.error && !tinLookupLoading && (
+                    <div style={{ fontSize: 11, marginTop: 4, color: 'var(--err)', padding: 6, borderRadius: 4, background: '#fee2e2', border: '1px solid #fca5a5' }}>
+                      {customerLookup.error}
+                    </div>
+                  )}
                   {pcPanel && saleForm.customerTin && (
                     <div style={{ marginTop: 8, padding: '10px 12px', background: 'var(--ink-50)', borderRadius: 8, border: '1px solid var(--ink-200)', position: 'absolute', zIndex: 100, width: 320, left: 0 }}>
                       <div style={{ fontSize: 12, color: 'var(--ink-600)', marginBottom: 6 }}>
@@ -338,6 +446,126 @@ export default function NewInvoice() {
                 </div>
               </div>
 
+              {/* Currency (F-27 Multi-Currency Support) */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 16px', marginBottom: 16 }}>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="currency">Currency</label>
+                  <select id="currency" className="form-input" value={saleForm.currencyCode}
+                    onChange={e => setSaleForm(f => ({ ...f, currencyCode: e.target.value, originalAmount: null }))}>
+                    <option value="RWF">RWF (Rwandan Franc)</option>
+                    {exchangeRates.map(rate => (
+                      <option key={rate.currencyCode} value={rate.currencyCode}>
+                        {rate.currencyCode} — {rate.currencyName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {saleForm.currencyCode && saleForm.currencyCode !== 'RWF' && (
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="origAmount">
+                      Amount ({saleForm.currencyCode})
+                    </label>
+                    <input id="origAmount" type="number" step="0.01" className="form-input input--mono"
+                      placeholder="0.00" value={saleForm.originalAmount || ''}
+                      onChange={e => setSaleForm(f => ({ ...f, originalAmount: e.target.value ? Number(e.target.value) : null }))} />
+                  </div>
+                )}
+              </div>
+
+              {/* F-28: Mixed Payment Support */}
+              {saleForm.paymentMethod === '03' && (
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: 12, marginBottom: 16 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>Payment Breakdown (Cash/Credit Mix)</span>
+                    <button type="button" className="btn btn--xs" onClick={() => setPaymentBreakdown([...paymentBreakdown, { method: '01', amount: 0 }])}>
+                      + Add
+                    </button>
+                  </div>
+                  {paymentBreakdown.map((pb, idx) => (
+                    <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 40px', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+                      <select className="form-input form-input--sm" value={pb.method}
+                        onChange={e => setPaymentBreakdown(paymentBreakdown.map((x, i) => i === idx ? { ...x, method: e.target.value } : x))}>
+                        <option value="01">Cash</option>
+                        <option value="05">Card</option>
+                        <option value="06">Mobile Money</option>
+                        <option value="02">Credit</option>
+                        <option value="07">Other</option>
+                      </select>
+                      <input type="number" className="form-input form-input--sm input--mono" placeholder="0.00" min="0" step="0.01"
+                        value={pb.amount || ''} onChange={e => setPaymentBreakdown(paymentBreakdown.map((x, i) => i === idx ? { ...x, amount: Number(e.target.value) || 0 } : x))} />
+                      <button type="button" className="btn btn--xs btn--danger"
+                        onClick={() => setPaymentBreakdown(paymentBreakdown.filter((_, i) => i !== idx))}>✕</button>
+                    </div>
+                  ))}
+                  {paymentBreakdown.length > 0 && (
+                    <div style={{ paddingTop: 8, borderTop: '1px solid #e2e8f0', marginTop: 8, fontSize: 12, color: 'var(--ink-600)' }}>
+                      Total: <b>{paymentBreakdown.reduce((sum, pb) => sum + pb.amount, 0).toLocaleString()}</b> RWF
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* F-29: Credit Sale (Deferred Payment) */}
+              {saleForm.paymentMethod === '02' && (
+                <div style={{ background: '#fefce8', border: '1px solid #fde047', borderRadius: 8, padding: 12, marginBottom: 16 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8, color: '#854d0e' }}>
+                    Credit Sale — Expected Payment Date
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" htmlFor="expectedPayDate">
+                      Expected Payment Date (required for credit sales)
+                    </label>
+                    <input id="expectedPayDate" type="date" className="form-input"
+                      value={saleForm.expectedPaymentDate || ''}
+                      onChange={e => setSaleForm(f => ({ ...f, expectedPaymentDate: e.target.value }))}
+                      required />
+                    <div style={{ fontSize: 11, color: 'var(--ink-500)', marginTop: 4 }}>
+                      Customer will pay by this date. Receipt will be marked as credit sale.
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* F-32: Export Invoice (Category D) */}
+              {saleItems.some(item => item.taxationType === 'D') && (
+                <div style={{ background: '#ecfdf5', border: '1px solid #86efac', borderRadius: 8, padding: 12, marginBottom: 16 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8, color: '#166534' }}>
+                    ⚠ Export Sale Detected (Tax Type D)
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px', marginBottom: 8 }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label" htmlFor="exportDate">
+                        Export Date (required)
+                      </label>
+                      <input id="exportDate" type="date" className="form-input"
+                        value={saleForm.exportDate || ''}
+                        onChange={e => setSaleForm(f => ({ ...f, exportDate: e.target.value }))} />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label" htmlFor="exportDocRef">
+                        Export Document Reference (required)
+                      </label>
+                      <input id="exportDocRef" className="form-input input--mono"
+                        placeholder="Customs doc, bill of lading, etc." maxLength="50"
+                        value={saleForm.exportDocumentRef || ''}
+                        onChange={e => setSaleForm(f => ({ ...f, exportDocumentRef: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" htmlFor="exportCountry">
+                      Destination Country Code (required)
+                    </label>
+                    <input id="exportCountry" className="form-input input--mono"
+                      placeholder="ISO 3166-1 (e.g., US, TZ, UG)" maxLength="2"
+                      value={saleForm.exportCountryCode || ''}
+                      onChange={e => setSaleForm(f => ({ ...f, exportCountryCode: e.target.value.toUpperCase() }))} />
+                    <div style={{ fontSize: 11, color: 'var(--ink-500)', marginTop: 4 }}>
+                      All items must have Tax Type D (zero-rated). Cannot mix with other tax types.
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Items */}
               <div style={{ marginBottom: 16 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
@@ -378,7 +606,11 @@ export default function NewInvoice() {
                         style={{ background: item.code ? 'var(--ink-50)' : undefined }} />
                       <ClassificationPicker id={`cls-${idx}`} required value={item.classificationCode}
                         onChange={v => setItem(idx, 'classificationCode', v)}
-                        onSelect={obj => { if (obj.taxType || obj.taxTyCd) setItem(idx, 'taxationType', obj.taxType || obj.taxTyCd) }} />
+                        onSelect={obj => {
+                          if (obj.taxType || obj.taxTyCd) setItem(idx, 'taxationType', obj.taxType || obj.taxTyCd)
+                          if (obj.packageUnit || obj.packUnit || obj.pkgUnit) setItem(idx, 'packageUnit', obj.packageUnit || obj.packUnit || obj.pkgUnit)
+                          if (!item.name && (obj.name || obj.itemClsNm)) setItem(idx, 'name', obj.name || obj.itemClsNm)
+                        }} />
                       <input className="form-input form-input--sm input--mono" type="number" min="1" value={item.quantity}
                         onChange={e => setItem(idx, 'quantity', e.target.value)} required />
                       <input className="form-input form-input--sm input--mono" type="number" min="0" placeholder="0" value={item.price}

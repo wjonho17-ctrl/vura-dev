@@ -9,6 +9,7 @@ router.group(() => {
   router.get('/report/period', [ReportsController, 'period'])
   router.get('/report/purchases', [ReportsController, 'purchases'])
   router.get('/report/x', [ReportsController, 'x_report'])
+  router.get('/report/z', [ReportsController, 'z_report']) // F-46: Z Report (End of Day)
   router.get('/report/plu', [ReportsController, 'plu_report'])
   router.get('/report/ej', [ReportsController, 'ej'])
   router.get('/report/stock', [ReportsController, 'stock_movement'])

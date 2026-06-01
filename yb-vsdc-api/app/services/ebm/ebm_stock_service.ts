@@ -173,16 +173,18 @@ export class EbmStocksService extends EbmService {
 
   private convertSaveStockMasterOptionToEbmProps(option: InventoryItem) {
     return JSON.stringify({
-      tin: String(option.tin || this.user?.tin),
-      bhfId: String(option.branchId || this.user?.branchId || '00'),
-      dvcId: String(option.deviceId || this.user?.deviceId),
+      tin:      String(option.tin || this.user?.tin),
+      bhfId:    String(option.branchId || this.user?.branchId || '00'),
+      dvcId:    String(option.deviceId || this.user?.deviceId),
       dvcSrlNo: String(option.deviceSerialNo || this.user?.serialNo),
-      itemCd: option.itemCode,
-      rsdQty: option.remainQuantity,
-      regrId: String(option.registrantId || this.user?.tin),
-      regrNm: option.registrantName || this.user?.taxPayerName,
-      modrId: String(option.modifierId || this.user?.tin),
-      modrNm: option.modifierName || this.user?.taxPayerName,
+      itemCd:   option.itemCode,
+      rsdQty:   option.remainQuantity,
+      // §9.1: 1=Opening Stock, 2=Purchase IN, 3=Manual Adjustment — default 3
+      stockTyCd: option.stockTyCd ?? '3',
+      regrId:   String(option.registrantId || this.user?.tin),
+      regrNm:   option.registrantName || this.user?.taxPayerName,
+      modrId:   String(option.modifierId || this.user?.tin),
+      modrNm:   option.modifierName || this.user?.taxPayerName,
     })
   }
 

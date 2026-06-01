@@ -52,6 +52,9 @@ export default class Sale extends compose(BaseModel, Filterable) {
   declare customerName: string
 
   @column()
+  declare customerMobileNo: string | null
+
+  @column()
   declare saleType: EbmTransactionType
 
   @column()
@@ -61,6 +64,21 @@ export default class Sale extends compose(BaseModel, Filterable) {
   declare paymentMethod: EbmPaymentMethod
 
   @column()
+  declare paymentBreakdown: Array<{ method: string; amount: number }> | null // F-28: Mixed payment breakdown
+
+  @column()
+  declare currencyCode: string | null
+
+  @column()
+  declare originalAmount: number | null
+
+  @column()
+  declare exchangeRate: number | null
+
+  @column.date()
+  declare exchangeRateDate: DateTime | null
+
+  @column()
   declare saleStatus: EbmTransactionProgress
 
   @column.dateTime()
@@ -68,6 +86,24 @@ export default class Sale extends compose(BaseModel, Filterable) {
 
   @column.date()
   declare saleDate: DateTime
+
+  @column.date()
+  declare exportDate: DateTime | null // F-32: Export date (when goods leave the country)
+
+  @column()
+  declare exportDocumentRef: string | null // F-32: Export document reference (customs doc, bill of lading, etc.)
+
+  @column()
+  declare exportCountryCode: string | null // F-32: ISO 3166-1 alpha-2 country code where goods exported to
+
+  @column.date()
+  declare expectedPaymentDate: DateTime | null // F-29: Expected payment date for credit sales
+
+  @column()
+  declare creditStatus: 'none' | 'outstanding' | 'partial' | 'paid' // F-29: Credit payment status
+
+  @column()
+  declare creditPaidAmount: number // F-29: Amount paid towards credit
 
   @column.dateTime()
   declare stockReleaseDate: DateTime | null
@@ -159,9 +195,15 @@ export default class Sale extends compose(BaseModel, Filterable) {
   @column()
   declare ebmSaleData: SaleEbmResponseData
 
-  // Signature chain — hash of the previous receipt at the time this sale was issued
+  // F-54: Signature Chaining — each receipt signature is computed using the previous receipt's signature
   @column()
-  declare previousRcptSign: string | null
+  declare rcptSign: string | null // Current receipt signature (HMAC)
+
+  @column()
+  declare previousRcptSign: string | null // Previous receipt signature for chaining
+
+  @column()
+  declare intrlData: string | null // Internal data used for signature computation (F-54)
 
   @column()
   declare previousIntrlData: string | null

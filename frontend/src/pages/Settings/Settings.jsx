@@ -4,6 +4,7 @@ import { configApi } from '../../api/config'
 import { authApi } from '../../api/auth'
 import { operatorApi } from '../../api/operator'
 import { useApp } from '../../context/AppContext'
+import { logActivity } from '../../hooks/useActivityLog'
 
 const PROFILE_FIELDS = [
   { label: 'Full Name',    name: 'fullName',     type: 'text' },
@@ -12,16 +13,30 @@ const PROFILE_FIELDS = [
   { label: 'Image URL',    name: 'imageLink',    type: 'text' },
 ]
 
-const TAX_LABELS = { A: 'Exempt (A)', B: 'Standard VAT (B)', C: 'Zero-rated (C)', D: 'Non-VAT (D)' }
-const TAX_DESCS  = {
-  A: '0% — Medicines, basic food, financial services',
-  B: '18% — Most goods and services',
-  C: '0% — Exports, some agricultural inputs',
-  D: 'N/A — Non-VAT taxpayers',
-}
+const TAX_TYPE_INFO = [
+  {
+    code: 'A', name: 'Exempt', defaultRate: 0, divider: 1,
+    description: 'VAT-exempt goods. No VAT charged, no VAT input credit. Applied to items RRA designates as basic necessities.',
+    examples: ['Medicines', 'Basic food (rice, maize)', 'Fresh milk', 'Financial services', 'Education'],
+  },
+  {
+    code: 'B', name: 'Standard VAT', defaultRate: 18, divider: 1.18,
+    description: 'Standard 18% VAT rate. The divider (1.18) extracts the tax portion from a VAT-inclusive price. Applies to most goods and commercial services.',
+    examples: ['Beverages', 'Electronics', 'Clothing', 'Restaurant services', 'Manufactured goods'],
+  },
+  {
+    code: 'C', name: 'Zero-rated', defaultRate: 0, divider: 1,
+    description: 'Zero-rated but VAT-registered. Rate is 0% however the business can still claim VAT input credits on purchases. Different from Exempt (A).',
+    examples: ['Exports', 'Some agricultural inputs', 'International transport'],
+  },
+  {
+    code: 'D', name: 'Non-VAT / Export', defaultRate: 0, divider: 1,
+    description: 'Used for non-VAT taxpayers or goods subject to export duty. No VAT applied. EBM tracks these separately from C-type.',
+    examples: ['Non-VAT registered sales', 'Specific export goods', 'Special duty items'],
+  },
+]
 
-const EBM_URL  = import.meta.env.VITE_EBM_BASE_URL  || 'http://localhost:8080/vsdc/'
-const API_PORT = import.meta.env.VITE_API_PORT       || '8000'
+const API_PORT = import.meta.env.VITE_API_PORT || '8000'
 
 export default function Settings() {
   const { rawUser, refreshUser } = useApp()
@@ -103,6 +118,23 @@ export default function Settings() {
     } finally { setMrcSaving(false) }
   }
 
+  const [syncStatus, setSyncStatus] = useState('idle')
+  const [syncResult, setSyncResult] = useState(null)
+  const [syncErr,    setSyncErr]    = useState(null)
+
+  async function handleSyncCodes() {
+    setSyncStatus('loading'); setSyncErr(null); setSyncResult(null)
+    try {
+      const count = await operatorApi.syncClassificationCodes()
+      setSyncResult(count)
+      setSyncStatus('done')
+      logActivity({ action: 'SYNC_CLASSIFICATIONS', category: 'Settings', summary: `Classification codes synced (${count} codes updated)` })
+    } catch (err) {
+      setSyncErr(err.message || 'Sync failed')
+      setSyncStatus('error')
+    }
+  }
+
   const [codesId,      setCodesId]      = useState('')
   const [codesData,    setCodesData]    = useState(null)
   const [codesLoading, setCodesLoading] = useState(false)
@@ -120,39 +152,16 @@ export default function Settings() {
     } finally { setCodesLoading(false) }
   }
 
-  const [taxes, setTaxes]       = useState([])
-  const [edits, setEdits]       = useState({})
-  const [loading, setLoading]   = useState(true)
-  const [saving, setSaving]     = useState({})
-  const [saved, setSaved]       = useState({})
-  const [error, setError]       = useState(null)
+  const [taxes,   setTaxes]   = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState(null)
 
   useEffect(() => {
     configApi.list()
-      .then(data => {
-        const list = Array.isArray(data) ? data : data?.data ?? []
-        setTaxes(list)
-        const initial = {}
-        list.forEach(t => { initial[t.id] = { rate: t.rate ?? t.taxRate ?? 0 } })
-        setEdits(initial)
-      })
+      .then(data => setTaxes(Array.isArray(data) ? data : data?.data ?? []))
       .catch(err => setError(err.message))
       .finally(() => setLoading(false))
   }, [])
-
-  async function saveTax(tax) {
-    setSaving(s => ({ ...s, [tax.id]: true }))
-    setSaved(s => ({ ...s, [tax.id]: false }))
-    try {
-      await configApi.update(tax.id, { rate: Number(edits[tax.id]?.rate ?? 0) })
-      setSaved(s => ({ ...s, [tax.id]: true }))
-      setTimeout(() => setSaved(s => ({ ...s, [tax.id]: false })), 2500)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setSaving(s => ({ ...s, [tax.id]: false }))
-    }
-  }
 
   return (
     <AppShell title="Settings">
@@ -175,7 +184,6 @@ export default function Settings() {
             <div className="card__body">
               <table className="settings-table">
                 <tbody>
-                  <SettingRow label="EBM Base URL"       value={EBM_URL} mono />
                   <SettingRow label="API Server Port"    value={API_PORT} mono />
                   <SettingRow label="EBM API Version"    value="2.1" />
                   <SettingRow label="Specification"      value="VSDC v1.0.5 (RRA EBM 2.1)" />
@@ -327,6 +335,35 @@ export default function Settings() {
             </div>
           )}
 
+          {/* Classification Codes Sync */}
+          <div className="card">
+            <div className="card__head">
+              <h3>Classification Codes</h3>
+            </div>
+            <div className="card__body">
+              <p style={{ margin: '0 0 14px', fontSize: 13, color: 'var(--ink-500)', lineHeight: 1.5 }}>
+                Pull the latest item classification codes (HS codes) from the RRA EBM server and update the local database. Run this before creating new items if you suspect codes are outdated.
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <button
+                  className="btn btn--primary btn--sm"
+                  onClick={handleSyncCodes}
+                  disabled={syncStatus === 'loading'}
+                >
+                  {syncStatus === 'loading' ? 'Syncing…' : 'Sync Codes'}
+                </button>
+                {syncStatus === 'done' && (
+                  <span className="chip chip--ok">
+                    ✓ {syncResult > 0 ? `${syncResult} codes updated` : 'Already up to date'}
+                  </span>
+                )}
+                {syncStatus === 'error' && (
+                  <span style={{ fontSize: 13, color: 'var(--err)' }}>{syncErr}</span>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Branch Reference Data */}
           <div className="card">
             <div className="card__head">
@@ -383,87 +420,72 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Tax Configuration */}
+          {/* Tax Type Reference */}
           <div className="card">
             <div className="card__head">
-              <h3>Tax Configuration</h3>
-              <span className="chip chip--info chip--plain" style={{ fontSize: 12 }}>Requires API access</span>
+              <h3>VAT & Tax Types</h3>
+              <span className="chip chip--plain" style={{ fontSize: 12 }}>Read-only · Set by RRA</span>
             </div>
             <div className="card__body">
-              {error && (
-                <div className="settings-error">{error}</div>
-              )}
+              <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--ink-500)', lineHeight: 1.6 }}>
+                These tax types are defined by RRA and apply to every item you register and every receipt you issue.
+                You must assign the correct type to each item — the classification code suggests the right type automatically.
+              </p>
+              {error && <div className="settings-error" style={{ marginBottom: 12 }}>{error}</div>}
               {loading ? (
-                <div style={{ color: 'var(--ink-500)', padding: '12px 0' }}>Loading tax rates…</div>
-              ) : taxes.length === 0 ? (
-                <div style={{ color: 'var(--ink-500)', padding: '12px 0' }}>
-                  No tax configuration found. Rates are read from environment variables.
-                </div>
+                <div style={{ color: 'var(--ink-500)', padding: '8px 0' }}>Loading…</div>
               ) : (
-                <table className="data" style={{ width: '100%' }}>
-                  <thead>
-                    <tr>
-                      <th>Type</th>
-                      <th>Description</th>
-                      <th className="num">Rate (%)</th>
-                      <th style={{ width: 100 }}></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {taxes.map(tax => {
-                      const key  = tax.taxType || tax.type || tax.cd
-                      const edit = edits[tax.id] ?? { rate: tax.rate ?? 0 }
-                      return (
-                        <tr key={tax.id}>
-                          <td>
-                            <span className="chip chip--brand chip--plain">{key}</span>
-                          </td>
-                          <td style={{ color: 'var(--ink-600)' }}>
-                            {TAX_DESCS[key] || tax.name || '—'}
-                          </td>
-                          <td className="num">
-                            <input
-                              type="number"
-                              className="form-input form-input--sm form-input--num"
-                              value={edit.rate}
-                              min={0} max={100} step={0.01}
-                              onChange={e => setEdits(prev => ({ ...prev, [tax.id]: { rate: e.target.value } }))}
-                            />
-                          </td>
-                          <td style={{ textAlign: 'right' }}>
-                            <button
-                              className={`btn btn--sm${saved[tax.id] ? ' btn--ok' : ''}`}
-                              style={saved[tax.id] ? { color: 'var(--ok)', borderColor: '#bbf7d0' } : {}}
-                              onClick={() => saveTax(tax)}
-                              disabled={saving[tax.id]}
-                            >
-                              {saving[tax.id] ? 'Saving…' : saved[tax.id] ? '✓ Saved' : 'Save'}
-                            </button>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+                <div style={{ display: 'grid', gap: 10 }}>
+                  {TAX_TYPE_INFO.map(info => {
+                    const live = taxes.find(t => (t.taxType || t.type) === info.code)
+                    const rate = live ? live.rate : info.defaultRate
+                    const active = live ? live.isActive : true
+                    return (
+                      <div key={info.code} style={{
+                        display: 'flex', gap: 14, alignItems: 'flex-start',
+                        padding: '12px 14px', borderRadius: 10,
+                        border: `1px solid ${active ? 'var(--ink-200)' : 'var(--ink-100)'}`,
+                        background: active ? 'var(--surface)' : 'var(--ink-50)',
+                        opacity: active ? 1 : 0.55,
+                      }}>
+                        <span className={`tax-chip tax-${info.code}`} style={{ flexShrink: 0, marginTop: 2 }}>
+                          {info.code}
+                        </span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                            <span style={{ fontWeight: 600, fontSize: 13.5 }}>{info.name}</span>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--brand-700)', fontWeight: 700 }}>
+                              {rate}%
+                            </span>
+                            {!active && <span className="chip chip--err" style={{ fontSize: 11 }}>Inactive</span>}
+                          </div>
+                          <div style={{ fontSize: 12.5, color: 'var(--ink-500)', lineHeight: 1.5 }}>
+                            {info.description}
+                          </div>
+                          <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                            {info.examples.map(ex => (
+                              <span key={ex} style={{ fontSize: 11, background: 'var(--ink-100)', borderRadius: 4, padding: '2px 6px', color: 'var(--ink-600)' }}>
+                                {ex}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                          <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 2 }}>Divider</div>
+                          <code style={{ fontSize: 12, fontFamily: 'var(--font-mono)' }}>
+                            {live?.divider ?? info.divider}
+                          </code>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               )}
-
-              {/* Static fallback when no DB config */}
-              {!loading && taxes.length === 0 && (
-                <table className="data" style={{ width: '100%', marginTop: 12 }}>
-                  <thead>
-                    <tr><th>Type</th><th>Description</th><th className="num">Rate (%)</th></tr>
-                  </thead>
-                  <tbody>
-                    {['A','B','C','D'].map(k => (
-                      <tr key={k}>
-                        <td><span className="chip chip--brand chip--plain">{k}</span></td>
-                        <td style={{ color: 'var(--ink-600)' }}>{TAX_DESCS[k]}</td>
-                        <td className="num mono">{k === 'B' ? '18.00' : '0.00'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+              <div style={{ marginTop: 14, padding: '10px 14px', borderRadius: 8, background: 'var(--ink-50)', border: '1px solid var(--ink-200)', fontSize: 12.5, color: 'var(--ink-500)' }}>
+                <strong style={{ color: 'var(--ink-700)' }}>Note on IPL & TL:</strong> Insurance Premium Levy (IPL) and Tourism Levy (TL) are additional levies on top of VAT.
+                They are set per item using <code style={{ fontSize: 11 }}>iplCatCd</code> and <code style={{ fontSize: 11 }}>tlCatCd</code> fields when registering an item.
+                Contact your admin to update tax rates if RRA issues a rate change.
+              </div>
             </div>
           </div>
 

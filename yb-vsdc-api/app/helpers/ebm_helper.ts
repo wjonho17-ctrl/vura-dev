@@ -67,6 +67,25 @@ export function getEbmTaxName(tax: 'A' | 'B' | 'C' | 'D') {
   }
 }
 
+/**
+ * F-51: Extract main item group (product type) from classification code
+ * Classification code format: CC[productType]... where CC=country code, productType=1-4
+ * Examples: RW1XXXX, RW2XXXX, RW3XXXX, RW4XXXX
+ */
+export function getMainItemGroup(classificationCode: string): string {
+  if (!classificationCode || classificationCode.length < 3) return 'Other'
+
+  const productTypeCode = classificationCode.charAt(2)
+  const groups: { [key: string]: string } = {
+    '1': 'Raw Materials',
+    '2': 'Finished Products',
+    '3': 'Services',
+    '4': 'Composed Items',
+  }
+
+  return groups[productTypeCode] || 'Other'
+}
+
 export function getEbmPaymentMethodDescription(paymentMethod: EbmPaymentMethod): string {
   const descriptions: { [key in EbmPaymentMethod]: string } = {
     [EbmPaymentMethod.CASH]: 'CASH',

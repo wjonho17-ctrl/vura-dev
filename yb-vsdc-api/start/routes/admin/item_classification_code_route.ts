@@ -7,4 +7,4 @@ router.group(() => {
   router.get('/sync', [ItemClassificationCodeController, 'sync'])
 })
 .prefix('/item/classification')
-.middleware(middleware.auth({guards: ['admin']}))
+.middleware(middleware.auth({guards: ['admin', 'api']}))

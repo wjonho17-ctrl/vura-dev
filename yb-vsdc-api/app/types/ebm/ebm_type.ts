@@ -242,9 +242,10 @@ export enum EbmTaxpayerStatus {
 }
 
 export enum EbmProductType {
-  RawMaterial = '1', // Raw Material
-  FinishedProduct = '2', // FinishedProduct
-  Service = '3', //Service without stock
+  RawMaterial = '1',     // Raw Material
+  FinishedProduct = '2', // Finished Product
+  Service = '3',         // Service — no stock check
+  Composed = '4',        // Composed/Bundle — stock deducted from components, not this item
 }
 
 export enum EbmCountryCode {

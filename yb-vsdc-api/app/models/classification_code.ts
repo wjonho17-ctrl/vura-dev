@@ -5,11 +5,8 @@ import { EbmTaxType } from '#types/ebm/ebm_type'
 import ClassificationCodeFilter from './filters/classification_code_filter.js'
 import { compose } from '@adonisjs/core/helpers'
 import { Filterable } from 'adonis-lucid-filter'
-import { Searchable } from '@foadonis/magnify'
 
-export default class ClassificationCode extends compose(BaseModel, Filterable, Searchable) {
-  static searchableColumns = ['name', 'code']
-
+export default class ClassificationCode extends compose(BaseModel, Filterable) {
   static $filter = () => ClassificationCodeFilter
 
   @column({ isPrimary: true })

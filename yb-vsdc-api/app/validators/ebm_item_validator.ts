@@ -93,8 +93,10 @@ export const cancelImportItemValidator = vine.compile(
 )
 
 export const listItemClassficationCodeValidator = vine.compile(vine.object({
-  name: vine.string().optional(),
-  code: vine.string().optional(),
+  q:       vine.string().optional(), // OR search: name or code
+  name:    vine.string().optional(),
+  code:    vine.string().optional(),
+  taxType: vine.string().optional(),
   ...listRequestValidatorObject
 }))
 

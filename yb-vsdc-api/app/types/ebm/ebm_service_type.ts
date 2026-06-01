@@ -59,6 +59,14 @@ export interface InitEbmOption {
   deviceSerialNo: string
 }
 
+export interface SaveDeviceInfoOption {
+  tin: number
+  branchId: string
+  deviceSerialNo: string
+  mrcNo?: string | null
+  sdcId?: string | null
+}
+
 export type InitEbmInfo = {
   tin: string
   taxprNm: string
@@ -286,6 +294,7 @@ export interface SaveTrainingEbmOptions {
   //needed if customer tin is setted
   purchaseCode?: string | null
   customerName: string
+  customerMobileNo?: string | null
   saleType: EbmTransactionType
   receiptType: EbmReceiptType
   paymentMethod: EbmPaymentMethod
@@ -361,6 +370,7 @@ export interface EbmItem {
 
 export enum EbmEndpoint {
   SelectInitInfo = 'initializer/selectInitInfo',
+  saveDeviceInfo = 'device/saveDvcInfo',
   selectCustomer = 'customers/selectCustomer',
   selectBranches = 'branches/selectBranches',
   saveSales = 'trnsSales/saveSales',
@@ -644,6 +654,8 @@ export interface InventoryItem {
   branchId?: string
   itemCode: string
   remainQuantity: number
+  // stockTyCd: 1=Opening Stock, 2=Purchase IN, 3=Manual Adjustment (§9.1)
+  stockTyCd?: '1' | '2' | '3'
   registrantId?: string
   registrantName?: string
   modifierId?: string

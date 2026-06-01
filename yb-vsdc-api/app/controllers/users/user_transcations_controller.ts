@@ -11,7 +11,8 @@ import {
   EbmApiResponseCode,
   EbmDefaultResponse, EbmReceiptType, EbmTaxType,
   EbmTransactionProgress,
-  EbmTransactionType
+  EbmTransactionType,
+  EbmPaymentMethod
 } from '#types/ebm/ebm_type'
 import {
   copySaveValidator,
@@ -109,6 +110,60 @@ export default class UserTranscationsController extends CatchEbmAndAllError {
         }
       }
 
+      // F-27: Multi-Currency Support — handle currency conversion if foreign currency used
+      let currencyCode: string | null = null
+      let originalAmount: number | null = null
+      let exchangeRate: number | null = null
+      let exchangeRateDate: DateTime | null = null
+
+      if (payload.currencyCode && payload.currencyCode !== 'RWF') {
+        const ExchangeRate = (await import('#models/exchange_rate')).default
+        const today = new Date().toISOString().slice(0, 10)
+
+        const rate = await ExchangeRate.query()
+          .where('currency_code', payload.currencyCode)
+          .where('is_active', true)
+          .where('effective_date', '<=', today)
+          .orderBy('effective_date', 'desc')
+          .first()
+
+        if (!rate) {
+          return response.badRequest({
+            error: `No active exchange rate found for ${payload.currencyCode}. Please add the rate in admin settings or use RWF.`,
+            currencyCode: payload.currencyCode,
+          })
+        }
+
+        if (!payload.originalAmount) {
+          return response.badRequest({
+            error: 'Original amount must be provided when using a foreign currency.',
+          })
+        }
+
+        currencyCode = payload.currencyCode
+        originalAmount = payload.originalAmount
+        exchangeRate = rate.rateToRwf
+        exchangeRateDate = DateTime.fromISO(rate.effectiveDate)
+      }
+
+      // F-32: Export invoice validation — all items must have tax type D (zero-rated)
+      if (payload.exportDate || payload.exportDocumentRef) {
+        const allItemsAreD = convertedItems.every(item => item.taxationType === EbmTaxType.D)
+
+        if (!allItemsAreD) {
+          return response.badRequest({
+            error: 'Export invoices (Category D) must contain ONLY items with tax type D (export/zero-rated). Cannot mix with other tax types (A, B, C).',
+            itemsWithWrongTax: convertedItems.filter(i => i.taxationType !== EbmTaxType.D).map(i => ({ code: i.code, name: i.name, tax: i.taxationType })),
+          })
+        }
+      }
+
+      // F-29: Credit sale (deferred payment) handling
+      let creditStatus: 'none' | 'outstanding' | 'partial' | 'paid' = 'none'
+      if (payload.paymentMethod === EbmPaymentMethod.CREDIT && payload.expectedPaymentDate) {
+        creditStatus = 'outstanding'
+      }
+
       const itemsTaxRateAndAmount = this.getTaxRatesAndAmounts(convertedItems)
 
       const invoiceNo = +usr.lastSaleInvoiceNo + 1
@@ -135,6 +190,7 @@ export default class UserTranscationsController extends CatchEbmAndAllError {
         totalItems: payload.items.length,
         branchId: usr.branchId,
         customerName: payload.customerName,
+        customerMobileNo: payload.customerMobileNo,
         items: convertedItems,
         receipt,
         saleDate: payload.saleDate.replaceAll('-', ''),
@@ -180,6 +236,10 @@ export default class UserTranscationsController extends CatchEbmAndAllError {
         usr.lastRcptSign = res.data.rcptSign ?? null
         usr.lastIntrlData = res.data.intrlData ?? null
 
+        // F-54: Store signature chain data in sale record
+        const rcptSign = res.data.rcptSign ?? null
+        const intrlData = res.data.intrlData ?? null
+
         const [sale] = await Promise.all([
           usr.related('sales').create({
             ...saleData,
@@ -191,8 +251,21 @@ export default class UserTranscationsController extends CatchEbmAndAllError {
             saleDate: DateTime.fromFormat(saleData.saleDate, 'yyyyMMdd'),
             ebmSaleData: res.data,
             resultDt: res.resultDt,
-            previousRcptSign: prevRcptSign,
+            rcptSign, // F-54: Current receipt signature (from EBM)
+            previousRcptSign: prevRcptSign, // F-54: Previous signature for chain verification
+            intrlData, // F-54: Internal data for signature computation
             previousIntrlData: prevIntrlData,
+            currencyCode,
+            originalAmount,
+            exchangeRate,
+            exchangeRateDate,
+            paymentBreakdown: payload.paymentBreakdown || null, // F-28: Mixed payment breakdown
+            expectedPaymentDate: payload.expectedPaymentDate ? DateTime.fromISO(payload.expectedPaymentDate) : null, // F-29: Credit sale
+            creditStatus, // F-29: Credit status
+            creditPaidAmount: 0, // F-29: Initially no amount paid
+            exportDate: payload.exportDate ? DateTime.fromISO(payload.exportDate) : null, // F-32: Export date
+            exportDocumentRef: payload.exportDocumentRef || null, // F-32: Export document reference
+            exportCountryCode: payload.exportCountryCode || null, // F-32: Export country code
           }),
           usr.save(),
         ])
@@ -528,6 +601,7 @@ export default class UserTranscationsController extends CatchEbmAndAllError {
         totalItems: payload.items.length,
         branchId: usr.branchId,
         customerName: payload.customerName,
+        customerMobileNo: payload.customerMobileNo,
         customerTin: payload.customerTin,
         purchaseCode: payload.purchaseCode,
         items: convertedItems,
@@ -607,6 +681,7 @@ export default class UserTranscationsController extends CatchEbmAndAllError {
         totalItems: payload.items.length,
         branchId: usr.branchId,
         customerName: payload.customerName,
+        customerMobileNo: payload.customerMobileNo,
         items: convertedItems,
         receipt,
         saleDate: payload.saleDate.replaceAll('-', ''),
@@ -698,6 +773,45 @@ export default class UserTranscationsController extends CatchEbmAndAllError {
 
     try {
       return await PurchaseAction.confirmOrReject(auth.user as User, payload)
+
+    } catch (error) {
+      return this.catchErrors(response, error)
+    }
+  }
+
+  // F-36: Purchase Refund — return goods to supplier
+  async purchase_refund({ request, response, auth }: HttpContext) {
+    const { purchaseRefundValidator } = await import('#validators/ebm_transaction_validator')
+    const payload = await request.validateUsing(purchaseRefundValidator)
+
+    try {
+      const usr = auth.user as User
+      const Purchase = (await import('#models/purchase')).default
+
+      // F-36: Find the original purchase to refund
+      const originalPurchase = await Purchase.find(payload.purchaseId)
+      if (!originalPurchase) {
+        return response.notFound({ error: 'Original purchase not found' })
+      }
+
+      if (originalPurchase.userId !== usr.id) {
+        return response.forbidden({ error: 'Cannot refund a purchase from another user' })
+      }
+
+      // F-36: Check if already refunded
+      const existingRefund = await Purchase.query()
+        .where('originalInvoiceNo', originalPurchase.invoiceNo)
+        .where('receiptTypeCode', 'R') // R = Refund
+        .first()
+
+      if (existingRefund) {
+        return response.badRequest({
+          error: `Purchase #${originalPurchase.invoiceNo} has already been refunded (Refund #${existingRefund.invoiceNo}).`,
+        })
+      }
+
+      // F-36: Create refund via PurchaseAction
+      return await PurchaseAction.createRefund(usr, originalPurchase, payload)
 
     } catch (error) {
       return this.catchErrors(response, error)

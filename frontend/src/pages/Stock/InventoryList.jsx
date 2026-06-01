@@ -22,7 +22,17 @@ const MOVEMENT_TYPES = [
   { v: '16', l: 'Outgoing Adjustment', dir: 'OUT' },
 ]
 
-const EMPTY_MOVE  = { storedAndReleasedType: '02', originalStoredAndReleaseNo: '', itemCd: '', quantity: '', unitCost: '' }
+// RRA adjustment reason codes — mandatory when type is 06 (IN Adjustment) or 16 (OUT Adjustment)
+const ADJUSTMENT_REASONS = [
+  { v: '01', l: 'Expiry / Damaged goods' },
+  { v: '02', l: 'Transfer between branches' },
+  { v: '03', l: 'Manual correction / Counting error' },
+  { v: '04', l: 'Return to supplier' },
+  { v: '05', l: 'Other (describe in notes)' },
+]
+const ADJUSTMENT_TYPES = ['06', '16']
+
+const EMPTY_MOVE  = { storedAndReleasedType: '02', originalStoredAndReleaseNo: '', itemCd: '', quantity: '', unitCost: '', remark: '' }
 const EMPTY_COUNT = { itemCode: '', remainQuantity: '' }
 
 // ── Icons ──────────────────────────────────────────────────────────────────
@@ -45,7 +55,7 @@ export default function InventoryList() {
   const branchId = rawUser?.branchId || ''
   const isTrainingMode = rawUser?.isTrainingMode || false
 
-  const [viewTab, setViewTab] = useState('Status') // 'Status' | 'History' | 'Adjust' | 'Count'
+  const [viewTab, setViewTab] = useState('Status') // 'Status' | 'Masters' | 'History' | 'Adjust' | 'Transfer' | 'Count'
 
   // Status State
   const [items, setItems] = useState([])
@@ -134,10 +144,75 @@ export default function InventoryList() {
     finally { setHistLoading(false) }
   }, [])
 
+  // Transfer State (F-20)
+  const [transferForm,    setTransferForm]    = useState({ itemCode: '', itemName: '', quantity: '', toBranchId: '' })
+  const [transferSaving,  setTransferSaving]  = useState(false)
+  const [transferErr,     setTransferErr]     = useState(null)
+  const [transferOk,      setTransferOk]      = useState(null)
+  const [transferSearch,  setTransferSearch]  = useState('')
+  const [transferItems,   setTransferItems]   = useState([])
+  const [branches,        setBranches]        = useState([])
+
   useEffect(() => {
-    if (viewTab === 'Status') loadStatus(1)
+    operatorApi.listBranches().then(res => {
+      const list = Array.isArray(res) ? res : res?.data ?? []
+      setBranches(list)
+    }).catch(() => {})
+  }, [])
+
+  async function searchTransferItems(q) {
+    setTransferSearch(q)
+    if (!q || q.length < 2) { setTransferItems([]); return }
+    try {
+      const res = await operatorApi.searchItems(q, 1, 10)
+      setTransferItems(res?.items?.data ?? res?.data ?? [])
+    } catch { setTransferItems([]) }
+  }
+
+  async function handleTransfer(e) {
+    e.preventDefault(); setTransferErr(null); setTransferSaving(true); setTransferOk(null)
+    try {
+      const res = await operatorApi.transferStock({
+        itemCode: transferForm.itemCode,
+        quantity: Number(transferForm.quantity),
+        toBranchId: transferForm.toBranchId,
+        remark: '02',
+      })
+      setTransferOk(res.message)
+      setTransferForm({ itemCode: '', itemName: '', quantity: '', toBranchId: '' })
+      setTransferSearch('')
+      setTimeout(() => setTransferOk(null), 5000)
+    } catch (err) {
+      setTransferErr(err.data?.error || err.data?.resultMsg || err.message || 'Transfer failed')
+    } finally { setTransferSaving(false) }
+  }
+
+  // Masters State
+  const [masters,        setMasters]        = useState([])
+  const [mastersPage,    setMastersPage]    = useState(1)
+  const [mastersTotal,   setMastersTotal]   = useState(0)
+  const [mastersLast,    setMastersLast]    = useState(1)
+  const [mastersLoading, setMastersLoading] = useState(false)
+  const [mastersSearch,  setMastersSearch]  = useState('')
+
+  const loadMasters = useCallback(async (p = 1) => {
+    setMastersLoading(true)
+    try {
+      const res = await operatorApi.listStockMasters(p, 50)
+      const data = res?.data ?? []
+      setMasters(data)
+      setMastersTotal(res?.meta?.total ?? data.length)
+      setMastersLast(res?.meta?.lastPage ?? 1)
+      setMastersPage(p)
+    } catch (err) { console.error(err) }
+    finally { setMastersLoading(false) }
+  }, [])
+
+  useEffect(() => {
+    if (viewTab === 'Status')  loadStatus(1)
     if (viewTab === 'History') loadHistory(1)
-  }, [viewTab, loadStatus, loadHistory])
+    if (viewTab === 'Masters') loadMasters(1)
+  }, [viewTab, loadStatus, loadHistory, loadMasters])
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   const searchItemsInForm = useCallback(async (q) => {
@@ -155,12 +230,19 @@ export default function InventoryList() {
     e.preventDefault(); setMoveErr(null); setMoveSaving(true); setMoveOk(false)
     try {
       const selectedType = MOVEMENT_TYPES.find(t => t.v === moveForm.storedAndReleasedType)
+      const isAdjustment = ADJUSTMENT_TYPES.includes(moveForm.storedAndReleasedType)
+      if (isAdjustment && !moveForm.remark.trim()) {
+        setMoveErr('Reason is required for adjustment movements (RRA §9.2).')
+        setMoveSaving(false)
+        return
+      }
       const payload = {
         storedAndReleasedType: moveForm.storedAndReleasedType,
         itemCd: moveForm.itemCd,
         quantity: Number(moveForm.quantity),
         unitCost: Number(moveForm.unitCost),
         branchId,
+        remark: moveForm.remark || undefined,
       }
       if (moveForm.originalStoredAndReleaseNo) payload.originalStoredAndReleaseNo = Number(moveForm.originalStoredAndReleaseNo)
       await operatorApi.saveStock(payload)
@@ -308,9 +390,11 @@ export default function InventoryList() {
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 32 }}>
           <div style={{ background: 'var(--ink-100)', padding: 4, borderRadius: 12, display: 'inline-flex', gap: 2, border: '1px solid var(--ink-200)' }}>
             {[
-              { id: 'Status',  label: 'Current Inventory', icon: <IcoBox /> },
-              { id: 'History', label: 'Movement History',  icon: <IcoHistory /> },
-              { id: 'Count',   label: 'Inventory Count',   icon: <IcoCount /> },
+              { id: 'Status',   label: 'Current Inventory', icon: <IcoBox /> },
+              { id: 'Masters',  label: 'Stock Balances',    icon: <IcoTarget /> },
+              { id: 'History',  label: 'Movement History',  icon: <IcoHistory /> },
+              { id: 'Transfer', label: 'Branch Transfer',   icon: <IcoArrowUp /> },
+              { id: 'Count',    label: 'Inventory Count',   icon: <IcoCount /> },
             ].map(t => (
               <button key={t.id}
                 className={`btn btn--ghost`}
@@ -592,7 +676,33 @@ export default function InventoryList() {
                       <input className="form-input mono" type="number" required value={moveForm.unitCost} onChange={e => setMoveForm({...moveForm, unitCost: e.target.value})} />
                    </div>
 
-                   <div style={{ marginTop: 32 }}>
+                   {/* Reason — mandatory for adjustment types 06/16 */}
+                   {ADJUSTMENT_TYPES.includes(moveForm.storedAndReleasedType) && (
+                     <div style={{ marginTop: 16, padding: '14px 16px', borderRadius: 10, border: '2px solid var(--brand-300,#93c5fd)', background: 'var(--brand-50,#eff6ff)' }}>
+                       <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--brand-700)', marginBottom: 10 }}>
+                         Adjustment reason required (RRA §9.2)
+                       </div>
+                       <div className="form-group" style={{ marginBottom: 10 }}>
+                         <label className="form-label">Reason code <span style={{ color: 'var(--err)' }}>*</span></label>
+                         <select className="form-input" value={moveForm.remark} onChange={e => setMoveForm({...moveForm, remark: e.target.value})} required>
+                           <option value="">— Select reason —</option>
+                           {ADJUSTMENT_REASONS.map(r => (
+                             <option key={r.v} value={r.v}>{r.v} · {r.l}</option>
+                           ))}
+                         </select>
+                       </div>
+                       {moveForm.remark === '05' && (
+                         <div className="form-group" style={{ marginBottom: 0 }}>
+                           <label className="form-label">Describe the reason <span style={{ color: 'var(--err)' }}>*</span></label>
+                           <input className="form-input" placeholder="Explain the reason for this adjustment…"
+                             value={moveForm.remarkNote || ''}
+                             onChange={e => setMoveForm({...moveForm, remarkNote: e.target.value})} />
+                         </div>
+                       )}
+                     </div>
+                   )}
+
+                   <div style={{ marginTop: 24 }}>
                       <button type="submit" className="btn btn--primary btn--lg" style={{ width: '100%', height: 52, borderRadius: 12 }} disabled={moveSaving || !moveForm.itemCd}>
                          {moveSaving ? 'Recording Movement...' : 'Record Stock Movement'}
                       </button>
@@ -698,6 +808,176 @@ export default function InventoryList() {
                 </form>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ── TRANSFER TAB (F-20) ── */}
+        {viewTab === 'Transfer' && (
+          <div style={{ maxWidth: 560, margin: '0 auto' }}>
+            <div className="card">
+              <div className="card__head">
+                <div>
+                  <h3 style={{ margin: 0 }}>Branch Transfer</h3>
+                  <p style={{ margin: '2px 0 0', fontSize: 12.5, color: 'var(--ink-500)' }}>
+                    Move stock from this branch to another branch under the same TIN. Both branches are updated in EBM.
+                  </p>
+                </div>
+              </div>
+              <div className="card__body">
+                {transferErr && <div className="settings-error" style={{ marginBottom: 14 }}>{transferErr}</div>}
+                {transferOk && (
+                  <div style={{ marginBottom: 14, padding: '10px 14px', borderRadius: 8, background: '#f0fdf4', border: '1px solid #bbf7d0', color: 'var(--ok)', fontWeight: 600 }}>
+                    ✓ {transferOk}
+                  </div>
+                )}
+
+                <form onSubmit={handleTransfer}>
+                  {/* Item search */}
+                  <div className="form-group" style={{ position: 'relative' }}>
+                    <label className="form-label">Item to transfer <span style={{ color: 'var(--err)' }}>*</span></label>
+                    <input
+                      className="form-input"
+                      placeholder="Search item name or code…"
+                      value={transferSearch}
+                      onChange={e => searchTransferItems(e.target.value)}
+                      autoComplete="off"
+                    />
+                    {transferForm.itemCode && (
+                      <div style={{ fontSize: 11, color: 'var(--ink-500)', fontFamily: 'var(--font-mono)', marginTop: 4 }}>
+                        Selected: <strong>{transferForm.itemCode}</strong> — {transferForm.itemName}
+                      </div>
+                    )}
+                    {transferItems.length > 0 && (
+                      <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, background: 'var(--surface)', border: '1px solid var(--ink-200)', borderRadius: 8, zIndex: 10, boxShadow: '0 6px 20px rgba(0,0,0,.12)', maxHeight: 200, overflowY: 'auto' }}>
+                        {transferItems.map((it, i) => (
+                          <div key={it.id || it.code}
+                            onClick={() => { setTransferForm(f => ({ ...f, itemCode: it.code, itemName: it.name })); setTransferSearch(it.name); setTransferItems([]) }}
+                            style={{ padding: '9px 14px', cursor: 'pointer', borderTop: i > 0 ? '1px solid var(--ink-100)' : 'none', display: 'flex', justifyContent: 'space-between', fontSize: 13 }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'var(--ink-50)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                          >
+                            <span style={{ fontWeight: 600 }}>{it.name}</span>
+                            <span style={{ fontSize: 11, color: 'var(--ink-500)', fontFamily: 'var(--font-mono)' }}>{it.code}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
+                    <div className="form-group">
+                      <label className="form-label">Quantity <span style={{ color: 'var(--err)' }}>*</span></label>
+                      <input className="form-input input--mono" type="number" required min="1" step="0.01"
+                        value={transferForm.quantity} onChange={e => setTransferForm(f => ({ ...f, quantity: e.target.value }))} />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Destination branch <span style={{ color: 'var(--err)' }}>*</span></label>
+                      <select className="form-input" required value={transferForm.toBranchId} onChange={e => setTransferForm(f => ({ ...f, toBranchId: e.target.value }))}>
+                        <option value="">— Select branch —</option>
+                        {branches.filter(b => b.branchId !== branchId).map(b => (
+                          <option key={b.branchId} value={b.branchId}>{b.branchName || b.branchId} ({b.branchId})</option>
+                        ))}
+                      </select>
+                      {branches.filter(b => b.branchId !== branchId).length === 0 && (
+                        <span className="form-hint">No other branches found under your TIN.</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '10px 14px', borderRadius: 8, background: '#fef9c3', border: '1px solid #fde047', fontSize: 12.5, color: '#92400e', marginBottom: 20 }}>
+                    <strong>§9.4:</strong> Both branches are updated in EBM (OUT from this branch, IN at destination).
+                    Only branches under the same TIN are shown. Transfer cannot be reversed once confirmed.
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <button type="submit" className="btn btn--primary" disabled={transferSaving || !transferForm.itemCode || !transferForm.toBranchId}>
+                      {transferSaving ? 'Transferring…' : 'Confirm Transfer'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── MASTERS TAB ── */}
+        {viewTab === 'Masters' && (
+          <div className="card">
+            <div className="filterbar">
+              <div className="field" style={{ flex: 1 }}>
+                <IcoSearch />
+                <input
+                  placeholder="Filter by item name or code…"
+                  value={mastersSearch}
+                  onChange={e => setMastersSearch(e.target.value)}
+                />
+              </div>
+              <button className="btn btn--sm" onClick={() => loadMasters(mastersPage)} disabled={mastersLoading}>
+                {mastersLoading ? 'Loading…' : '↻ Refresh'}
+              </button>
+            </div>
+
+            {mastersLoading ? (
+              <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-500)' }}>Loading stock balances…</div>
+            ) : masters.length === 0 ? (
+              <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--ink-500)' }}>
+                <div style={{ fontWeight: 600, marginBottom: 6 }}>No stock master records found</div>
+                <div style={{ fontSize: 13 }}>Save an inventory count or receive stock to create balance records.</div>
+              </div>
+            ) : (
+              <div className="table-wrap">
+                <table className="data">
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th>Item Code</th>
+                      <th className="num">Balance (Qty)</th>
+                      <th>Branch</th>
+                      <th>Last Updated</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {masters
+                      .filter(m => {
+                        if (!mastersSearch.trim()) return true
+                        const q = mastersSearch.toLowerCase()
+                        return (m.itemName || '').toLowerCase().includes(q) || m.itemCode.toLowerCase().includes(q)
+                      })
+                      .map(m => (
+                        <tr key={m.id}>
+                          <td style={{ fontWeight: 600 }}>{m.itemName || m.itemCode}</td>
+                          <td><span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{m.itemCode}</span></td>
+                          <td className="num">
+                            <span style={{
+                              fontWeight: 700,
+                              color: m.remainQuantity <= 0 ? 'var(--err)' : m.remainQuantity < 10 ? '#b45309' : 'var(--ok)',
+                              fontVariantNumeric: 'tabular-nums',
+                            }}>
+                              {Number(m.remainQuantity ?? 0).toLocaleString()}
+                            </span>
+                            {m.remainQuantity <= 0 && <span style={{ marginLeft: 6, fontSize: 10, color: 'var(--err)' }}>OUT</span>}
+                            {m.remainQuantity > 0 && m.remainQuantity < 10 && <span style={{ marginLeft: 6, fontSize: 10, color: '#b45309' }}>LOW</span>}
+                          </td>
+                          <td style={{ fontSize: 12, color: 'var(--ink-500)' }}>{m.branchId || '—'}</td>
+                          <td style={{ fontSize: 12, color: 'var(--ink-500)' }}>{m.updatedAt ? new Date(m.updatedAt).toLocaleDateString() : '—'}</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Pagination */}
+            {!mastersLoading && mastersLast > 1 && (
+              <div className="pagination">
+                <span>Showing {masters.length} of {mastersTotal} records</span>
+                <div className="pages">
+                  <button disabled={mastersPage <= 1} onClick={() => loadMasters(mastersPage - 1)}>‹</button>
+                  <button disabled={mastersPage >= mastersLast} onClick={() => loadMasters(mastersPage + 1)}>›</button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

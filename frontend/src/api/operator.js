@@ -6,16 +6,20 @@ export const operatorApi = {
   searchItems: (q, page = 1, perPage = 5) => api.get(`/stocks/item/search?q=${encodeURIComponent(q)}&page=${page}&perPage=${perPage}`),
   findItem:    (id)                     => api.get(`/stocks/item/find/${id}`),
   createItem:  (data)                   => api.post('/stocks/item/save', data),
+  syncItemsFromEbm: ()                  => api.post('/stocks/item/sync', {}),
   updateItem:  (items)                  => api.put('/stocks/item/update', { items }),
   deleteItem:  (code)                   => api.del(`/stocks/item/${code}`),
+  getItemCompositions: (code)           => api.get(`/stocks/item/${encodeURIComponent(code)}/compositions`),
   saveItemComposition: (data)           => api.post('/stocks/item/composition/save', data),
 
   // ── Stock movements (/stocks/...) ────────────────────────────────────────
+  listStockMasters:   (page = 1, perPage = 50) => api.get(`/stocks/master/list?page=${page}&perPage=${perPage}`),
   listStocks:         (page = 1, perPage = 10) => api.get(`/stocks/list?page=${page}&perPage=${perPage}`),
   saveStock:          (data) => api.post('/stocks/save', data),
   saveStockWithItems: (data) => api.post('/stocks/save_with_items', data),
-  saveMaster:         (data) => api.post('/stocks/master/save', data),
+  saveMaster:         (data) => api.post('/stocks/master/save', data), // data.stockTyCd: '1'=Opening, '3'=Adjustment
   syncStock:          ()     => api.get('/stocks/sync'),
+  transferStock:      (data) => api.post('/stocks/transfer', data),
 
   // ── Cash (/cash/...) ─────────────────────────────────────────────────────
   deposit:    (data)       => api.post('/cash/deposit', data),
@@ -67,6 +71,8 @@ export const operatorApi = {
   // ── Branches (/branches/...) ─────────────────────────────────────────────
   listBranches:   ()     => api.get('/branches/'),
   findBranch:     ()     => api.get('/branches/find'),
+  selectBranches: (branchId, lastRequestDt = '') => api.get(`/branches/selectBranches/${branchId}${lastRequestDt ? `?dt=${lastRequestDt}` : ''}`),
+  selectBranchesPost: (branchId, lastRequestDt = '') => api.post(`/branches/selectBranches/${branchId}`, { lastRequestDt }),
   saveCustomer:   (data) => api.post('/branches/customers/save', data),
   updateCustomer: (data) => api.put('/branches/customers/update', data),
   deleteCustomer: (id)   => api.del(`/branches/customers/${id}`),
@@ -82,11 +88,30 @@ export const operatorApi = {
 
   // ── Reference data (/customers/:branchId, /items/classification/:branchId) ─
   findCustomerByTin:        (branchId) => api.get(`/customers/${branchId}`),
+  selectCustomer:           (branchId, customerTin) => api.get(`/customers/selectCustomer/${branchId}?customerTin=${encodeURIComponent(customerTin)}`),
+  selectCustomerPost:       (branchId, customerTin) => api.post(`/customers/selectCustomer/${branchId}`, { customerTin }),
   itemClassification:       (branchId) => api.get(`/items/classification/${branchId}`),
-  searchClassificationCodes:(q = '')   => api.get(`/codes/item/classification/list${q ? `?name=${encodeURIComponent(q)}` : ''}`),
+  syncClassificationCodes:  ()          => api.get('/item/classification/sync'),
+  selectItemsClass:         (branchId, lastRequestDt = '') => api.get(`/itemClass/${branchId}${lastRequestDt ? `?dt=${lastRequestDt}` : ''}`),
+  searchClassificationCodes:(q = '', { page = 1, perPage = 20, taxType = '' } = {}) => {
+    const params = new URLSearchParams({ page, perPage })
+    if (q)       params.set('name', q)
+    if (taxType) params.set('taxType', taxType)
+    return api.get(`/codes/item/classification/list?${params.toString()}`)
+  },
   branchCodes:              (branchId) => api.get(`/codes/${branchId}`),
   purchaseCode:             (data)     => api.post('/purchasecode', data),
 
   // ── Notices (/notices/) ──────────────────────────────────────────────────
   notices: (page = 1, perPage = 10) => api.get(`/notices/?page=${page}&perPage=${perPage}`),
+
+  // ── Config (/config/...) ──────────────────────────────────────────────────
+  getExchangeRates: () => api.get('/config/exchange-rates'),
+
+  // ── Notices (/notices/...) ──────────────────────────────────────────────────
+  selectNotices: (branchId, lastRequestDt = '') => api.get(`/notices/selectNotices/${branchId}${lastRequestDt ? `?dt=${lastRequestDt}` : ''}`),
+  selectNoticesPost: (branchId, lastRequestDt = '') => api.post(`/notices/selectNotices/${branchId}`, { lastRequestDt }),
+
+  // ── Customers (/customers/...) ─────────────────────────────────────────────
+  lookupCustomerByTin: (tin) => api.get(`/customers/lookup-by-tin?tin=${encodeURIComponent(tin)}`), // F-43: TIN lookup
 }
