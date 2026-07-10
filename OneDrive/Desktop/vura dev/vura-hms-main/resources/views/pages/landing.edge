@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vura Ecosystem - Healthcare Management Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+            color: #333;
+        }
+
+        header {
+            background: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            padding: 0 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0284c7;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #0284c7, #06b6d4);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        nav {
+            display: flex;
+            gap: 40px;
+            align-items: center;
+        }
+
+        nav a {
+            color: #64748b;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: #0284c7;
+        }
+
+        .btn-login {
+            background: #0284c7;
+            color: white;
+            padding: 10px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-login:hover {
+            background: #0369a1;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 60px 40px;
+            background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+        }
+
+        .hero h1 {
+            font-size: 48px;
+            color: #0c4a6e;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: #64748b;
+            margin-bottom: 40px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .toll-free {
+            display: inline-block;
+            background: #0284c7;
+            color: white;
+            padding: 12px 28px;
+            border-radius: 24px;
+            font-weight: 600;
+            margin-bottom: 40px;
+        }
+
+        .search-bar {
+            max-width: 600px;
+            margin: 0 auto 60px;
+            position: relative;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 15px 50px 15px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.3s;
+        }
+
+        .search-bar input:focus {
+            outline: none;
+            box-shadow: 0 6px 20px rgba(2, 132, 199, 0.3);
+        }
+
+        .search-bar::after {
+            content: '🔍';
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 18px;
+            pointer-events: none;
+        }
+
+        .services {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            padding: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .service-card {
+            background: white;
+            border-radius: 16px;
+            padding: 40px 24px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .service-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(2, 132, 199, 0.15);
+        }
+
+        .icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #e0f2fe, #dbeafe);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 40px;
+        }
+
+        .service-card h3 {
+            font-size: 24px;
+            margin-bottom: 12px;
+            color: #0c4a6e;
+        }
+
+        .service-card p {
+            color: #64748b;
+            font-size: 14px;
+            line-height: 1.6;
+            flex-grow: 1;
+            margin-bottom: 20px;
+        }
+
+        .service-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .status-badge {
+            background: #dbeafe;
+            color: #0284c7;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .btn-access {
+            background: #0284c7;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+            align-self: center;
+            margin-top: auto;
+        }
+
+        .btn-access:hover {
+            background: #0369a1;
+        }
+
+        footer {
+            background: white;
+            padding: 40px;
+            text-align: center;
+            color: #64748b;
+            border-top: 1px solid #e2e8f0;
+            margin-top: 60px;
+        }
+
+        .features {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            margin: 40px 0;
+            flex-wrap: wrap;
+        }
+
+        .feature {
+            text-align: center;
+        }
+
+        .feature-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #0284c7;
+        }
+
+        .feature-label {
+            font-size: 14px;
+            color: #64748b;
+            margin-top: 8px;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                padding: 0 20px;
+            }
+
+            nav {
+                gap: 20px;
+            }
+
+            .hero h1 {
+                font-size: 32px;
+            }
+
+            .services {
+                grid-template-columns: 1fr;
+                padding: 20px;
+            }
+
+            .features {
+                gap: 30px;
+            }
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <div class="logo-icon">V</div>
+            Vura Ecosystem
+        </div>
+        <nav>
+            <a href="#home">Home</a>
+            <a href="#systems">Systems</a>
+            <a href="#guide">Guide</a>
+            <a href="#about">About</a>
+            <button class="theme-toggle" id="themeToggle">🌙</button>
+            <a href="http://localhost:3335/login" class="btn-login">Login</a>
+        </nav>
+    </header>
+
+    <section class="hero" id="home">
+        <div class="toll-free">📞 Support: 9070</div>
+        <h1>Integrated Healthcare Management Platform</h1>
+        <p>Comprehensive solution for Hospital, Pharmacy, and Administrative Operations</p>
+
+        <div class="search-bar">
+            <input type="text" placeholder="Search system or service..." id="searchInput">
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <div class="feature-value">3</div>
+                <div class="feature-label">Integrated Systems</div>
+            </div>
+            <div class="feature">
+                <div class="feature-value">24/7</div>
+                <div class="feature-label">Availability</div>
+            </div>
+            <div class="feature">
+                <div class="feature-value">∞</div>
+                <div class="feature-label">Scalability</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="services" id="systems">
+        <!-- HMS Card -->
+        <a href="http://localhost:3335" class="service-card" target="_blank">
+            <div class="icon">🏥</div>
+            <h3>Hospital Management System</h3>
+            <p>Complete patient care management, consultation scheduling, prescription management, and medical records tracking for healthcare providers.</p>
+            <div class="service-info">
+                <span class="status-badge">Active</span>
+                <span>⏱️ Real-time</span>
+            </div>
+            <button class="btn-access" onclick="window.open('http://localhost:3335', '_blank'); return false;">Access HMS</button>
+        </a>
+
+        <!-- PMS Card -->
+        <a href="http://localhost:3333" class="service-card" target="_blank">
+            <div class="icon">💊</div>
+            <h3>Pharmacy Management System</h3>
+            <p>Inventory management, prescription processing, medicine stock tracking, and pharmacy operations for seamless medication distribution.</p>
+            <div class="service-info">
+                <span class="status-badge">Active</span>
+                <span>⏱️ Real-time</span>
+            </div>
+            <button class="btn-access" onclick="window.open('http://localhost:3333', '_blank'); return false;">Access PMS</button>
+        </a>
+
+        <!-- Backoffice Card -->
+        <a href="http://localhost:3334" class="service-card" target="_blank">
+            <div class="icon">⚙️</div>
+            <h3>Administrative Backoffice</h3>
+            <p>System administration, user management, configuration settings, and operational oversight for the entire healthcare ecosystem.</p>
+            <div class="service-info">
+                <span class="status-badge">Active</span>
+                <span>⏱️ Real-time</span>
+            </div>
+            <button class="btn-access" onclick="window.open('http://localhost:3334', '_blank'); return false;">Access Backoffice</button>
+        </a>
+
+        <!-- Equipment Requisition Card -->
+        <a href="http://localhost:3335/requisitions" class="service-card" target="_blank">
+            <div class="icon">📋</div>
+            <h3>Equipment Requisition System</h3>
+            <p>Request and manage medical equipment procurement with approval workflows, budget tracking, and supplier coordination.</p>
+            <div class="service-info">
+                <span class="status-badge">New</span>
+                <span>⏱️ 2 hours</span>
+            </div>
+            <button class="btn-access" onclick="window.open('http://localhost:3335/requisitions', '_blank'); return false;">Access Requisitions</button>
+        </a>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 Vura Ecosystem. All rights reserved. | Toll Free: 9070</p>
+        <p>Healthcare Management Platform | Confidential</p>
+    </footer>
+
+    <script>
+        // Theme toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const htmlElement = document.documentElement;
+
+        // Check for saved theme preference
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        htmlElement.setAttribute('data-theme', savedTheme);
+        updateThemeIcon();
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = htmlElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            htmlElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon();
+        });
+
+        function updateThemeIcon() {
+            const theme = htmlElement.getAttribute('data-theme');
+            themeToggle.textContent = theme === 'light' ? '🌙' : '☀️';
+        }
+
+        // Search functionality
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const cards = document.querySelectorAll('.service-card');
+
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                card.style.display = text.includes(query) ? 'flex' : 'none';
+            });
+        });
+
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const href = this.getAttribute('href');
+                if (href !== '#' && href.length > 1) {
+                    e.preventDefault();
+                    const target = document.querySelector(href);
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth' });
+                    }
+                }
+            });
+        });
+    </script>
+
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root[data-theme="dark"] {
+                background: linear-gradient(135deg, #082f49 0%, #0c1e2e 100%);
+                color: #e2e8f0;
+            }
+
+            :root[data-theme="dark"] header {
+                background: #0f172a;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            }
+
+            :root[data-theme="dark"] nav a {
+                color: #cbd5e1;
+            }
+
+            :root[data-theme="dark"] .hero {
+                background: linear-gradient(135deg, #082f49 0%, #0c1e2e 100%);
+            }
+
+            :root[data-theme="dark"] .hero h1 {
+                color: #e0f2fe;
+            }
+
+            :root[data-theme="dark"] .hero p {
+                color: #cbd5e1;
+            }
+
+            :root[data-theme="dark"] .service-card {
+                background: #0f172a;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            }
+
+            :root[data-theme="dark"] .service-card h3 {
+                color: #e0f2fe;
+            }
+
+            :root[data-theme="dark"] .service-card p {
+                color: #cbd5e1;
+            }
+
+            :root[data-theme="dark"] .icon {
+                background: linear-gradient(135deg, #164e63, #0f4f58);
+            }
+
+            :root[data-theme="dark"] footer {
+                background: #0f172a;
+                border-top-color: #1e293b;
+                color: #cbd5e1;
+            }
+
+            :root[data-theme="dark"] .status-badge {
+                background: #164e63;
+                color: #7dd3fc;
+            }
+
+            :root[data-theme="dark"] .service-info {
+                border-top-color: #1e293b;
+                color: #cbd5e1;
+            }
+        }
+    </style>
+</body>
+</html>
