@@ -24,7 +24,7 @@ server.errorHandler(() => import('../app/shared/exceptions/handler.ts'))
  */
 server.use([
   () => import('@foadonis/maintenance/maintenance_middleware'),
-  () => import('#middleware/container_bindings_middleware'),
+  () => import('../app/shared/middleware/container_bindings_middleware.ts'),
   () => import('@adonisjs/static/static_middleware'),
   () => import('@adonisjs/vite/vite_middleware'),
   () => import('@adonisjs/inertia/inertia_middleware'),
@@ -47,9 +47,9 @@ router.use([
  * the routes or the routes group.
  */
 export const middleware = router.named({
-  userCurrentFacilityCheck: () => import('#middleware/user_current_facility_check_middleware'),
-  guest: () => import('#middleware/guest_middleware'),
-  auth: () => import('#middleware/auth_middleware'),
-  apiAccessTokenCheck: () => import('#middleware/api_access_token_check_middleware'),
-  apiAdminAccessTokenCheck: () => import('#middleware/api_admin_access_token_check_middleware')
+  userCurrentFacilityCheck: () => import('../app/shared/middleware/user_current_facility_check_middleware.ts'),
+  guest: () => import('../app/shared/middleware/guest_middleware.ts'),
+  auth: () => import('../app/shared/middleware/auth_middleware.ts'),
+  apiAccessTokenCheck: () => import('../app/shared/middleware/api_access_token_check_middleware.ts'),
+  apiAdminAccessTokenCheck: () => import('../app/shared/middleware/api_admin_access_token_check_middleware.ts')
 })
