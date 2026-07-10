@@ -1,0 +1,24 @@
+export enum UserRole {
+  ADMIN = 'ADMIN',
+  MANAGER = 'MANAGER',
+}
+
+export enum MedbookUserRole {
+  SUPPLIYER = 5,
+  PHARMACIST = 3,
+}
+
+export enum MedbookUserRoles {
+  ADMIN = 1,
+  MANAGER = 2,
+  PHARMACIST = 3,
+  PHARMACIST_EMPLOYEE = 4,
+  SUPPLYER = 5,
+  SUPPLYER_EMPLOYEE = 6,
+  TRANSPORTER = 7,
+  TRANSPORTER_EMPLOYEE = 8,
+  HOSPITAL = 9,
+  HOSPITAL_EMPLOYEE = 10,
+  WHOLESELER = 11,
+  WHOLESELER_EMPLOYEE = 12,
+}

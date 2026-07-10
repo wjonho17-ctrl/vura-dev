@@ -1,0 +1,14 @@
+[
+  {
+    "name": "jobs",
+    "script": "node",
+    "args": ["ace", "jobs:listen"],
+    "autorestart": false
+  },
+  {
+    "name": "scheduler",
+    "script": "node",
+    "args": ["ace", "scheduler:listen"],
+    "autorestart": false
+  }
+]

@@ -1,0 +1,18 @@
+@import "tailwindcss";
+@import "tailwindcss-primeui";
+
+@theme {
+  --breakpoint-xs: 30rem; /* Adds a new 'xs' breakpoint */
+  --breakpoint-3xl: 100rem; /* Adds a new '3xl' breakpoint */
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+}

@@ -1,0 +1,40 @@
+import env from '#start/env'
+import { defineConfig, engines } from '@foadonis/magnify'
+import type { InferEngines } from '@foadonis/magnify/types'
+
+const magnifyConfig = defineConfig({
+  default: 'meilisearch',
+  engines: {
+    meilisearch: engines.meilisearch({
+      host: env.get('MEILISEARCH_HOST'),
+      apiKey: env.get('MEILISEARCH_API_KEY'),
+      indexSettings: {
+        products: {
+          searchableAttributes: ['name', 'composition'],
+          filterableAttributes: ['category'],
+          sortableAttributes: ['name'],
+        },
+        pharmacy_branch_products: {
+          searchableAttributes: ['name'],
+          filterableAttributes: ['branchId'],
+          sortableAttributes: ['name', 'quantity', 'price', 'expirationDate', 'branchId'],
+        },
+        pharmacy_wholeseller_branch_products: {
+          searchableAttributes: ['name'],
+          filterableAttributes: ['branchId'],
+          sortableAttributes: ['name', 'quantity', 'price', 'expirationDate', 'branchId'],
+        },
+      },
+    }),
+  },
+})
+
+export default magnifyConfig
+
+/**
+ * Inferring types for the list of engines you have configured
+ * in your application.
+ */
+declare module '@foadonis/magnify/types' {
+  export interface EnginesList extends InferEngines<typeof magnifyConfig> {}
+}
