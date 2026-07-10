@@ -1,0 +1,127 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:17-alpine
+    container_name: vura-postgres
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      TZ: UTC
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vura-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: vura-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vura-network
+
+  # Meilisearch Search Engine
+  meilisearch:
+    image: getmeili/meilisearch:v1.11
+    container_name: vura-meilisearch
+    environment:
+      MEILI_NO_ANALYTICS: "true"
+      MEILI_MASTER_KEY: "UXo7WQ9Pys416bawtsYpR2opjCl6JN_Fwh22OmZVqHY"
+    ports:
+      - "7700:7700"
+    volumes:
+      - meilisearch_data:/meili_data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vura-network
+
+  # Mailpit - Email Testing
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: vura-mailpit
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    volumes:
+      - mailpit_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8025"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vura-network
+
+  # LocalStack - S3 Bucket Emulation
+  localstack:
+    image: localstack/localstack:latest
+    container_name: vura-localstack
+    environment:
+      SERVICES: s3
+      DEBUG: "1"
+      DATA_DIR: /tmp/localstack/data
+      DOCKER_HOST: unix:///var/run/docker.sock
+      AWS_ACCESS_KEY_ID: "test"
+      AWS_SECRET_ACCESS_KEY: "test"
+      AWS_DEFAULT_REGION: "us-east-1"
+    ports:
+      - "4566:4566"  # LocalStack API endpoint
+    volumes:
+      - "${TMPDIR:-.}/localstack:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    healthcheck:
+      test: ["CMD", "awslocal", "s3", "ls"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vura-network
+
+  # Mock EBM API Service
+  ebm-api-mock:
+    image: node:22-alpine
+    container_name: vura-ebm-api
+    working_dir: /app
+    command: sh -c "cd /app && npm install && npm start"
+    ports:
+      - "3500:3500"
+    volumes:
+      - ./mock-ebm-api:/app
+    environment:
+      PORT: "3500"
+      NODE_ENV: "development"
+    depends_on:
+      - postgres
+    networks:
+      - vura-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  meilisearch_data:
+  mailpit_data:
+
+networks:
+  vura-network:
+    driver: bridge

@@ -1,0 +1,113 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Vura Backoffice Dev",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": ["ace", "serve", "--hmr"],
+      "cwd": "${workspaceFolder}/vura-backoffice-develop",
+      "skipFiles": ["<node_internals>/**"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "envFile": "${workspaceFolder}/vura-backoffice-develop/.env",
+      "preLaunchTask": "Check Backoffice Dependencies"
+    },
+    {
+      "name": "Vura HMS Dev",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": ["ace", "serve", "--hmr"],
+      "cwd": "${workspaceFolder}/vura-hms-main",
+      "skipFiles": ["<node_internals>/**"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "envFile": "${workspaceFolder}/vura-hms-main/.env",
+      "preLaunchTask": "Check HMS Dependencies"
+    },
+    {
+      "name": "Vura PMS Dev",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": ["ace", "serve", "--hmr"],
+      "cwd": "${workspaceFolder}/vura-pms-main",
+      "skipFiles": ["<node_internals>/**"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "envFile": "${workspaceFolder}/vura-pms-main/.env",
+      "preLaunchTask": "Check PMS Dependencies"
+    },
+    {
+      "name": "Mock EBM API",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/mock-ebm-api/server.js",
+      "restart": true,
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "cwd": "${workspaceFolder}/mock-ebm-api",
+      "preLaunchTask": "Install Mock EBM Dependencies"
+    },
+    {
+      "name": "Vura Backoffice Build",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": ["ace", "build"],
+      "cwd": "${workspaceFolder}/vura-backoffice-develop",
+      "skipFiles": ["<node_internals>/**"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Vura HMS Build",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": ["ace", "build"],
+      "cwd": "${workspaceFolder}/vura-hms-main",
+      "skipFiles": ["<node_internals>/**"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Run Backoffice Migrations",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": ["ace", "migration:run"],
+      "cwd": "${workspaceFolder}/vura-backoffice-develop",
+      "skipFiles": ["<node_internals>/**"],
+      "console": "integratedTerminal",
+      "envFile": "${workspaceFolder}/vura-backoffice-develop/.env"
+    },
+    {
+      "name": "Run HMS Migrations",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": ["ace", "migration:run"],
+      "cwd": "${workspaceFolder}/vura-hms-main",
+      "skipFiles": ["<node_internals>/**"],
+      "console": "integratedTerminal",
+      "envFile": "${workspaceFolder}/vura-hms-main/.env"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "All Services (Backoffice + HMS + Mock EBM)",
+      "configurations": [
+        "Vura Backoffice Dev",
+        "Vura HMS Dev",
+        "Mock EBM API"
+      ],
+      "preLaunchTask": "Start Docker Compose",
+      "stopOnEntry": false
+    },
+    {
+      "name": "All with PMS",
+      "configurations": [
+        "Vura Backoffice Dev",
+        "Vura HMS Dev",
+        "Vura PMS Dev",
+        "Mock EBM API"
+      ],
+      "preLaunchTask": "Start Docker Compose",
+      "stopOnEntry": false
+    }
+  ]
+}

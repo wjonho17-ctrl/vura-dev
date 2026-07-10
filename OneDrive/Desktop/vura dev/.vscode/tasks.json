@@ -1,0 +1,158 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start Docker Compose",
+      "type": "shell",
+      "command": "docker-compose",
+      "args": ["up", "-d"],
+      "cwd": "${workspaceFolder}",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "isBackground": true
+    },
+    {
+      "label": "Stop Docker Compose",
+      "type": "shell",
+      "command": "docker-compose",
+      "args": ["down"],
+      "cwd": "${workspaceFolder}",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Check Backoffice Dependencies",
+      "type": "shell",
+      "command": "npm",
+      "args": ["install"],
+      "cwd": "${workspaceFolder}/vura-backoffice-develop",
+      "problemMatcher": ["$npm"],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      },
+      "isBackground": false
+    },
+    {
+      "label": "Check HMS Dependencies",
+      "type": "shell",
+      "command": "npm",
+      "args": ["install"],
+      "cwd": "${workspaceFolder}/vura-hms-main",
+      "problemMatcher": ["$npm"],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      },
+      "isBackground": false
+    },
+    {
+      "label": "Check PMS Dependencies",
+      "type": "shell",
+      "command": "npm",
+      "args": ["install"],
+      "cwd": "${workspaceFolder}/vura-pms-main",
+      "problemMatcher": ["$npm"],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      },
+      "isBackground": false
+    },
+    {
+      "label": "Install Mock EBM Dependencies",
+      "type": "shell",
+      "command": "npm",
+      "args": ["install"],
+      "cwd": "${workspaceFolder}/mock-ebm-api",
+      "problemMatcher": ["$npm"],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      },
+      "isBackground": false
+    },
+    {
+      "label": "Generate Backoffice App Key",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "dev"],
+      "cwd": "${workspaceFolder}/vura-backoffice-develop",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Generate HMS App Key",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "dev"],
+      "cwd": "${workspaceFolder}/vura-hms-main",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Run Backoffice Migrations",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "dbf"],
+      "cwd": "${workspaceFolder}/vura-backoffice-develop",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Run HMS Migrations",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "dbf"],
+      "cwd": "${workspaceFolder}/vura-hms-main",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "View Mailpit UI",
+      "type": "shell",
+      "command": "start",
+      "args": ["http://localhost:8025"],
+      "windows": {
+        "command": "cmd",
+        "args": ["/c", "start", "http://localhost:8025"]
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent"
+      }
+    },
+    {
+      "label": "View Meilisearch Admin",
+      "type": "shell",
+      "command": "start",
+      "args": ["http://localhost:7700"],
+      "windows": {
+        "command": "cmd",
+        "args": ["/c", "start", "http://localhost:7700"]
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent"
+      }
+    }
+  ]
+}

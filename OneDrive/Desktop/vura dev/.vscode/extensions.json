@@ -1,0 +1,24 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "Vue.volar",
+    "Vue.vscode-typescript-vue-plugin",
+    "ms-vscode.js-debug",
+    "ms-vscode.js-debug-nightly",
+    "GitHub.GitHub-repositories",
+    "eamodio.gitlens",
+    "ms-azuretools.vscode-docker",
+    "ms-vscode-remote.remote-containers",
+    "redhat.vscode-yaml",
+    "ms-vscode.makefile-tools",
+    "ms-vscode.vscode-node-debug2",
+    "vitaliymaz.vite",
+    "SonarSource.sonarlint-vscode",
+    "christian-kohler.path-intellisense",
+    "cssho.vscode-svgviewer",
+    "hashicorp.hcl",
+    "yzhang.markdown-all-in-one",
+    "DavidAnson.vscode-markdownlint"
+  ]
+}
