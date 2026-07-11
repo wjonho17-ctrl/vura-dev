@@ -941,8 +941,12 @@
                                 <span>Employee</span>
                             </label>
                             <label class="radio-option">
-                                <input type="radio" name="accountType" value="organization">
-                                <span>Organization</span>
+                                <input type="radio" name="accountType" value="hospital">
+                                <span>Hospital</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="accountType" value="pharmacy">
+                                <span>Pharmacy</span>
                             </label>
                         </div>
                     </div>
@@ -976,17 +980,7 @@
                         </select>
                     </div>
 
-                    <!-- Organization Type (Level 1) -->
-                    <div id="orgTypeGroup" class="form-group" style="display:none;">
-                        <label for="regOrgType">Organization Type</label>
-                        <select id="regOrgType" name="orgType" onchange="updateOrgDepartment()">
-                            <option value="">Select Organization Type</option>
-                            <option value="hospital">Hospital</option>
-                            <option value="pharmacy">Pharmacy</option>
-                        </select>
-                    </div>
-
-                    <!-- Hospital Departments (Level 2 - Hospital) -->
+                    <!-- Hospital Departments -->
                     <div id="hospitalDeptGroup" class="form-group" style="display:none;">
                         <label for="regHospitalDept">Hospital Department</label>
                         <select id="regHospitalDept" name="hospitalDept">
@@ -997,7 +991,7 @@
                         </select>
                     </div>
 
-                    <!-- Pharmacy Type (Level 2 - Pharmacy) -->
+                    <!-- Pharmacy Type -->
                     <div id="pharmacyTypeGroup" class="form-group" style="display:none;">
                         <label for="regPharmacyType">Pharmacy Type</label>
                         <select id="regPharmacyType" name="pharmacyType">
@@ -1225,53 +1219,33 @@
             radio.addEventListener('change', function() {
                 const accountType = this.value;
                 const departmentGroup = document.getElementById('departmentGroup');
-                const orgTypeGroup = document.getElementById('orgTypeGroup');
                 const hospitalDeptGroup = document.getElementById('hospitalDeptGroup');
                 const pharmacyTypeGroup = document.getElementById('pharmacyTypeGroup');
 
                 if (accountType === 'employee') {
                     departmentGroup.style.display = 'flex';
-                    orgTypeGroup.style.display = 'none';
                     hospitalDeptGroup.style.display = 'none';
                     pharmacyTypeGroup.style.display = 'none';
                     document.getElementById('regDepartment').required = true;
-                    document.getElementById('regOrgType').required = false;
                     document.getElementById('regHospitalDept').required = false;
                     document.getElementById('regPharmacyType').required = false;
-                } else {
+                } else if (accountType === 'hospital') {
                     departmentGroup.style.display = 'none';
-                    orgTypeGroup.style.display = 'flex';
-                    hospitalDeptGroup.style.display = 'none';
+                    hospitalDeptGroup.style.display = 'flex';
                     pharmacyTypeGroup.style.display = 'none';
                     document.getElementById('regDepartment').required = false;
-                    document.getElementById('regOrgType').required = true;
+                    document.getElementById('regHospitalDept').required = true;
+                    document.getElementById('regPharmacyType').required = false;
+                } else if (accountType === 'pharmacy') {
+                    departmentGroup.style.display = 'none';
+                    hospitalDeptGroup.style.display = 'none';
+                    pharmacyTypeGroup.style.display = 'flex';
+                    document.getElementById('regDepartment').required = false;
+                    document.getElementById('regHospitalDept').required = false;
+                    document.getElementById('regPharmacyType').required = true;
                 }
             });
         });
-
-        // Update organization department/type based on organization type selection
-        function updateOrgDepartment() {
-            const orgType = document.getElementById('regOrgType').value;
-            const hospitalDeptGroup = document.getElementById('hospitalDeptGroup');
-            const pharmacyTypeGroup = document.getElementById('pharmacyTypeGroup');
-
-            if (orgType === 'hospital') {
-                hospitalDeptGroup.style.display = 'flex';
-                pharmacyTypeGroup.style.display = 'none';
-                document.getElementById('regHospitalDept').required = true;
-                document.getElementById('regPharmacyType').required = false;
-            } else if (orgType === 'pharmacy') {
-                hospitalDeptGroup.style.display = 'none';
-                pharmacyTypeGroup.style.display = 'flex';
-                document.getElementById('regHospitalDept').required = false;
-                document.getElementById('regPharmacyType').required = true;
-            } else {
-                hospitalDeptGroup.style.display = 'none';
-                pharmacyTypeGroup.style.display = 'none';
-                document.getElementById('regHospitalDept').required = false;
-                document.getElementById('regPharmacyType').required = false;
-            }
-        }
 
         // Complete login and close modal
         function completeLogin() {
@@ -1310,9 +1284,8 @@
                 email: formData.get('email'),
                 phone: formData.get('phone'),
                 department: accountType === 'employee' ? formData.get('department') : null,
-                orgType: accountType === 'organization' ? formData.get('orgType') : null,
-                hospitalDept: accountType === 'organization' && formData.get('orgType') === 'hospital' ? formData.get('hospitalDept') : null,
-                pharmacyType: accountType === 'organization' && formData.get('orgType') === 'pharmacy' ? formData.get('pharmacyType') : null,
+                hospitalDept: accountType === 'hospital' ? formData.get('hospitalDept') : null,
+                pharmacyType: accountType === 'pharmacy' ? formData.get('pharmacyType') : null,
                 status: 'pending_approval',
                 submittedAt: new Date().toLocaleString()
             };
@@ -1330,28 +1303,23 @@
                 accountTypeText = 'Employee Account';
                 const dept = formData.get('department');
                 detailText = '\nDepartment: ' + (dept.charAt(0).toUpperCase() + dept.slice(1));
-            } else {
-                accountTypeText = 'Organization Account';
-                const orgType = formData.get('orgType');
-
-                if (orgType === 'hospital') {
-                    detailText = '\nOrganization: Hospital';
-                    const hospitalDept = formData.get('hospitalDept');
-                    const hospitalDeptNames = {
-                        'hospital': 'Hospital',
-                        'clinic': 'Clinic',
-                        'healthCenter': 'Health Center'
-                    };
-                    detailText += '\nDepartment: ' + (hospitalDeptNames[hospitalDept] || hospitalDept);
-                } else if (orgType === 'pharmacy') {
-                    detailText = '\nOrganization: Pharmacy';
-                    const pharmacyType = formData.get('pharmacyType');
-                    const pharmacyTypeNames = {
-                        'supply': 'Supply Pharmacy',
-                        'retail': 'Retail Pharmacy'
-                    };
-                    detailText += '\nType: ' + (pharmacyTypeNames[pharmacyType] || pharmacyType);
-                }
+            } else if (accountType === 'hospital') {
+                accountTypeText = 'Hospital Organization';
+                const hospitalDept = formData.get('hospitalDept');
+                const hospitalDeptNames = {
+                    'hospital': 'Hospital',
+                    'clinic': 'Clinic',
+                    'healthCenter': 'Health Center'
+                };
+                detailText = '\nDepartment: ' + (hospitalDeptNames[hospitalDept] || hospitalDept);
+            } else if (accountType === 'pharmacy') {
+                accountTypeText = 'Pharmacy Organization';
+                const pharmacyType = formData.get('pharmacyType');
+                const pharmacyTypeNames = {
+                    'supply': 'Supply Pharmacy',
+                    'retail': 'Retail Pharmacy'
+                };
+                detailText = '\nType: ' + (pharmacyTypeNames[pharmacyType] || pharmacyType);
             }
 
             alert('✓ Your registration has been submitted successfully!\n\nAccount Type: ' + accountTypeText + detailText + '\n\nYour documents have been sent to the admin for review.\nYou will receive an email at ' + staffData.email + ' once approved.');
@@ -1359,7 +1327,6 @@
             // Reset form and close modal
             this.reset();
             document.getElementById('departmentGroup').style.display = 'flex';
-            document.getElementById('orgTypeGroup').style.display = 'none';
             document.getElementById('hospitalDeptGroup').style.display = 'none';
             document.getElementById('pharmacyTypeGroup').style.display = 'none';
             closeStaffModal();
