@@ -1082,6 +1082,7 @@
         // Staff Registration Modal Functions
         function openStaffModal() {
             document.getElementById('staffModal').style.display = 'block';
+            updateFormFields();
         }
 
         function closeStaffModal() {
@@ -1247,7 +1248,9 @@
 
         // Update on radio button change
         document.querySelectorAll('input[name="accountType"]').forEach(radio => {
-            radio.addEventListener('change', updateFormFields);
+            radio.addEventListener('change', () => {
+                setTimeout(updateFormFields, 0);
+            });
         });
 
         // Complete login and close modal
