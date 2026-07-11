@@ -173,13 +173,19 @@
         .icon {
             width: 80px;
             height: 80px;
-            background: linear-gradient(135deg, #e0f2fe, #dbeafe);
+            background: linear-gradient(135deg, #fff5f2, #fff0ed);
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 20px;
             font-size: 40px;
+            padding: 10px;
+        }
+
+        .icon svg {
+            width: 100%;
+            height: 100%;
         }
 
         .service-card h3 {
@@ -325,7 +331,12 @@
     <section class="services" id="systems">
         <!-- HMS Card -->
         <a href="http://localhost:3335" class="service-card" target="_blank">
-            <div class="icon">🏥</div>
+            <div class="icon">
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <polygon points="20,20 35,50 20,80 30,80 50,50 30,20" fill="#ff6b5b"/>
+                    <polygon points="55,20 70,50 55,80 65,80 85,50 65,20" fill="#001a4d"/>
+                </svg>
+            </div>
             <h3>Hospital Management System</h3>
             <p>Complete patient care management, consultation scheduling, prescription management, and medical records tracking for healthcare providers.</p>
             <div class="service-info">
@@ -337,7 +348,12 @@
 
         <!-- PMS Card -->
         <a href="http://localhost:3333" class="service-card" target="_blank">
-            <div class="icon">💊</div>
+            <div class="icon">
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <polygon points="20,20 35,50 20,80 30,80 50,50 30,20" fill="#ff6b5b"/>
+                    <polygon points="55,20 70,50 55,80 65,80 85,50 65,20" fill="#001a4d"/>
+                </svg>
+            </div>
             <h3>Pharmacy Management System</h3>
             <p>Inventory management, prescription processing, medicine stock tracking, and pharmacy operations for seamless medication distribution.</p>
             <div class="service-info">
@@ -349,7 +365,12 @@
 
         <!-- Backoffice Card -->
         <a href="http://localhost:3334" class="service-card" target="_blank">
-            <div class="icon">⚙️</div>
+            <div class="icon">
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <polygon points="20,20 35,50 20,80 30,80 50,50 30,20" fill="#ff6b5b"/>
+                    <polygon points="55,20 70,50 55,80 65,80 85,50 65,20" fill="#001a4d"/>
+                </svg>
+            </div>
             <h3>Administrative Backoffice</h3>
             <p>System administration, user management, configuration settings, and operational oversight for the entire healthcare ecosystem.</p>
             <div class="service-info">
@@ -457,7 +478,7 @@
             }
 
             :root[data-theme="dark"] .icon {
-                background: linear-gradient(135deg, #164e63, #0f4f58);
+                background: linear-gradient(135deg, #0f2c3d, #0a1f2e);
             }
 
             :root[data-theme="dark"] footer {
