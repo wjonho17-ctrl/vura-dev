@@ -876,7 +876,6 @@
                         </div>
 
                         <button type="submit" class="btn-submit">Send OTP</button>
-                        <p class="info-text" id="otpInfo">We'll send a one-time password to your email</p>
                     </form>
                 </div>
 
@@ -934,6 +933,20 @@
                 <h2>Staff Registration</h2>
                 <p class="modal-subtitle">Create a new staff account</p>
                 <form id="registerForm" class="staff-form">
+                    <div class="form-group">
+                        <label>Register as:</label>
+                        <div class="contact-method-options">
+                            <label class="radio-option">
+                                <input type="radio" name="accountType" value="employee" checked>
+                                <span>Employee</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="accountType" value="organization">
+                                <span>Organization</span>
+                            </label>
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <label for="regFullName">Full Name</label>
                         <input type="text" id="regFullName" name="fullName" required placeholder="Enter your full name">
@@ -1096,18 +1109,15 @@
             const contactMethod = document.querySelector('input[name="contactMethod"]:checked').value;
             const contactInput = document.getElementById('contactInput');
             const contactLabel = document.getElementById('contactLabel');
-            const otpInfo = document.getElementById('otpInfo');
 
             if (contactMethod === 'email') {
                 contactLabel.textContent = 'Email Address';
                 contactInput.type = 'email';
                 contactInput.placeholder = 'your.email@example.com';
-                otpInfo.textContent = "We'll send a one-time password to your email";
             } else {
                 contactLabel.textContent = 'Phone Number';
                 contactInput.type = 'tel';
                 contactInput.placeholder = '+1 (555) 000-0000';
-                otpInfo.textContent = "We'll send a one-time password to your phone";
             }
             contactInput.value = '';
         }
@@ -1207,7 +1217,9 @@
             e.preventDefault();
 
             const formData = new FormData(this);
+            const accountType = formData.get('accountType');
             const staffData = {
+                accountType: accountType,
                 fullName: formData.get('fullName'),
                 email: formData.get('email'),
                 phone: formData.get('phone'),
@@ -1222,7 +1234,8 @@
             localStorage.setItem('staffSubmissions', JSON.stringify(staffSubmissions));
 
             // Show success message
-            alert('✓ Your registration has been submitted successfully!\n\nYour documents have been sent to the admin for review.\nYou will receive an email at ' + staffData.email + ' once approved.');
+            const accountTypeText = accountType === 'employee' ? 'Employee Account' : 'Organization Account';
+            alert('✓ Your registration has been submitted successfully!\n\nAccount Type: ' + accountTypeText + '\n\nYour documents have been sent to the admin for review.\nYou will receive an email at ' + staffData.email + ' once approved.');
 
             // Reset form and close modal
             this.reset();
