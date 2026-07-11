@@ -268,63 +268,6 @@
             margin-top: 8px;
         }
 
-        .ports-info {
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-            padding: 30px 40px;
-            border-bottom: 2px solid #0284c7;
-        }
-
-        .ports-container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .ports-container h2 {
-            text-align: center;
-            color: #0c4a6e;
-            font-size: 28px;
-            margin-bottom: 20px;
-            font-weight: 700;
-        }
-
-        .ports-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 15px;
-            justify-content: center;
-        }
-
-        .port-item {
-            background: white;
-            border-radius: 10px;
-            padding: 15px;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            border-left: 4px solid #0284c7;
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-
-        .port-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15);
-        }
-
-        .port-label {
-            display: block;
-            font-weight: 600;
-            color: #0284c7;
-            font-size: 14px;
-            margin-bottom: 5px;
-        }
-
-        .port-number {
-            display: block;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
-            color: #0c4a6e;
-            font-weight: 700;
-        }
-
         @media (max-width: 768px) {
             header {
                 padding: 0 20px;
@@ -372,38 +315,6 @@
             <a href="http://localhost:3335/login" class="btn-login">Login</a>
         </nav>
     </header>
-
-    <section class="ports-info">
-        <div class="ports-container">
-            <h2>🚀 Working Services</h2>
-            <div class="ports-grid">
-                <div class="port-item">
-                    <span class="port-label">HMS</span>
-                    <span class="port-number">:3335</span>
-                </div>
-                <div class="port-item">
-                    <span class="port-label">PMS</span>
-                    <span class="port-number">:3333</span>
-                </div>
-                <div class="port-item">
-                    <span class="port-label">Backoffice</span>
-                    <span class="port-number">:3334</span>
-                </div>
-                <div class="port-item">
-                    <span class="port-label">Database</span>
-                    <span class="port-number">:5432</span>
-                </div>
-                <div class="port-item">
-                    <span class="port-label">Redis</span>
-                    <span class="port-number">:6379</span>
-                </div>
-                <div class="port-item">
-                    <span class="port-label">Meilisearch</span>
-                    <span class="port-number">:7700</span>
-                </div>
-            </div>
-        </div>
-    </section>
 
     <section class="services" id="systems">
         <!-- Telemedicine Card -->
@@ -641,29 +552,6 @@
             :root[data-theme="dark"] .service-info {
                 border-top-color: #1e293b;
                 color: #cbd5e1;
-            }
-
-            :root[data-theme="dark"] .ports-info {
-                background: linear-gradient(135deg, #082f49 0%, #0c1e2e 100%);
-                border-bottom-color: #0284c7;
-            }
-
-            :root[data-theme="dark"] .ports-container h2 {
-                color: #e0f2fe;
-            }
-
-            :root[data-theme="dark"] .port-item {
-                background: #0f172a;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-                border-left-color: #0284c7;
-            }
-
-            :root[data-theme="dark"] .port-label {
-                color: #7dd3fc;
-            }
-
-            :root[data-theme="dark"] .port-number {
-                color: #e0f2fe;
             }
         }
     </style>
