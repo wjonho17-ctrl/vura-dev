@@ -28,24 +28,22 @@
         }
 
         .logo {
-            font-size: 24px;
-            font-weight: bold;
-            color: #0284c7;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 15px;
+            cursor: pointer;
         }
 
         .logo-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #0284c7, #06b6d4);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
+            width: 140px;
+            height: 80px;
+        }
+
+        .logo-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: #0c4a6e;
+            display: none;
         }
 
         nav {
@@ -303,8 +301,16 @@
 <body>
     <header>
         <div class="logo">
-            <div class="logo-icon">V</div>
-            Vura Ecosystem
+            <svg class="logo-icon" viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
+                <!-- Vura Text -->
+                <text x="20" y="120" font-size="80" font-weight="bold" fill="#001a4d" font-family="Arial, sans-serif">Vura</text>
+                <!-- Healthcare Text -->
+                <text x="20" y="160" font-size="24" font-weight="bold" fill="#ff6b5b" font-family="Arial, sans-serif">HEALTH CARE</text>
+                <!-- Chevrons -->
+                <polygon points="200,60 230,90 200,120" fill="#ff6b5b"/>
+                <polygon points="240,60 270,90 240,120" fill="#001a4d"/>
+            </svg>
+            <span class="logo-text">Vura Ecosystem</span>
         </div>
         <nav>
             <a href="#home">Home</a>
