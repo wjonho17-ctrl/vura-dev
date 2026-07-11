@@ -469,6 +469,72 @@
             font-size: 12px;
             margin: 0;
         }
+
+        /* Staff Tabs */
+        .staff-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 14px 20px;
+            background: none;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            position: relative;
+        }
+
+        .tab-button:hover {
+            color: #0284c7;
+        }
+
+        .tab-button.active {
+            color: #0284c7;
+            border-bottom-color: #0284c7;
+        }
+
+        .tab-content {
+            display: none;
+            animation: slideInRight 0.4s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideOutLeft {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+        }
+
+        .tab-content.leaving {
+            animation: slideOutLeft 0.3s ease-in forwards;
+        }
     </style>
 </head>
 <body>
@@ -492,7 +558,6 @@
             <a href="#about">About</a>
             <button class="theme-toggle" id="themeToggle">🌙</button>
             <a href="#staff-modal" class="btn-login" onclick="openStaffModal(); return false;">Staff</a>
-            <a href="http://localhost:3335/login" class="btn-login">Login</a>
         </nav>
     </header>
 
@@ -567,68 +632,102 @@
         </a>
     </section>
 
-    <!-- Staff Registration Modal -->
+    <!-- Staff Modal -->
     <div id="staffModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeStaffModal()">&times;</span>
-            <h2>👥 Staff Registration</h2>
-            <p class="modal-subtitle">Create a staff account by submitting your documents for approval</p>
 
-            <form id="staffForm" class="staff-form">
-                <div class="form-group">
-                    <label for="fullName">Full Name *</label>
-                    <input type="text" id="fullName" name="fullName" required placeholder="Enter your full name">
-                </div>
+            <!-- Tabs -->
+            <div class="staff-tabs">
+                <button class="tab-button active" onclick="switchTab('login')">🔐 Login</button>
+                <button class="tab-button" onclick="switchTab('register')">📝 Register</button>
+            </div>
 
-                <div class="form-group">
-                    <label for="email">Email Address *</label>
-                    <input type="email" id="email" name="email" required placeholder="your.email@example.com">
-                </div>
+            <!-- Login Form -->
+            <div id="loginTab" class="tab-content active">
+                <h2>👤 Staff Login</h2>
+                <p class="modal-subtitle">Sign in with your credentials</p>
+                <form id="loginForm" class="staff-form">
+                    <div class="form-group">
+                        <label for="loginEmail">Email Address *</label>
+                        <input type="email" id="loginEmail" name="email" required placeholder="your.email@example.com">
+                    </div>
 
-                <div class="form-group">
-                    <label for="phone">Phone Number *</label>
-                    <input type="tel" id="phone" name="phone" required placeholder="+1 (555) 000-0000">
-                </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Password *</label>
+                        <input type="password" id="loginPassword" name="password" required placeholder="Enter your password">
+                    </div>
 
-                <div class="form-group">
-                    <label for="department">Department *</label>
-                    <select id="department" name="department" required>
-                        <option value="">Select Department</option>
-                        <option value="nursing">Nursing</option>
-                        <option value="pharmacy">Pharmacy</option>
-                        <option value="doctor">Doctor</option>
-                        <option value="admin">Administration</option>
-                        <option value="lab">Laboratory</option>
-                        <option value="radiology">Radiology</option>
-                    </select>
-                </div>
+                    <button type="submit" class="btn-submit">Sign In</button>
+                    <p class="info-text">Don't have an account? Click the <strong>Register</strong> tab above</p>
+                </form>
+            </div>
 
-                <div class="form-group">
-                    <label for="idDocument">ID Document (PDF/Image) *</label>
-                    <input type="file" id="idDocument" name="idDocument" accept=".pdf,.jpg,.jpeg,.png" required>
-                    <small>Upload your government ID, passport, or license</small>
-                </div>
+            <!-- Register Form -->
+            <div id="registerTab" class="tab-content">
+                <h2>📝 Staff Registration</h2>
+                <p class="modal-subtitle">Create a new staff account</p>
+                <form id="registerForm" class="staff-form">
+                    <div class="form-group">
+                        <label for="regFullName">Full Name *</label>
+                        <input type="text" id="regFullName" name="fullName" required placeholder="Enter your full name">
+                    </div>
 
-                <div class="form-group">
-                    <label for="qualifications">Qualifications/Certificates (PDF/Image) *</label>
-                    <input type="file" id="qualifications" name="qualifications" accept=".pdf,.jpg,.jpeg,.png" required>
-                    <small>Upload your professional qualifications or certificates</small>
-                </div>
+                    <div class="form-group">
+                        <label for="regEmail">Email Address *</label>
+                        <input type="email" id="regEmail" name="email" required placeholder="your.email@example.com">
+                    </div>
 
-                <div class="form-group">
-                    <label for="resume">Resume/CV (PDF) *</label>
-                    <input type="file" id="resume" name="resume" accept=".pdf" required>
-                    <small>Upload your resume or curriculum vitae</small>
-                </div>
+                    <div class="form-group">
+                        <label for="regPhone">Phone Number *</label>
+                        <input type="tel" id="regPhone" name="phone" required placeholder="+1 (555) 000-0000">
+                    </div>
 
-                <div class="form-group checkbox">
-                    <input type="checkbox" id="agree" name="agree" required>
-                    <label for="agree">I agree to the terms and conditions and understand my account will require admin approval</label>
-                </div>
+                    <div class="form-group">
+                        <label for="regPassword">Password *</label>
+                        <input type="password" id="regPassword" name="password" required placeholder="Create a strong password">
+                    </div>
 
-                <button type="submit" class="btn-submit">Submit for Approval</button>
-                <p class="info-text">After submission, your documents will be reviewed by our admin team. You'll receive an email once approved.</p>
-            </form>
+                    <div class="form-group">
+                        <label for="regDepartment">Department *</label>
+                        <select id="regDepartment" name="department" required>
+                            <option value="">Select Department</option>
+                            <option value="nursing">Nursing</option>
+                            <option value="pharmacy">Pharmacy</option>
+                            <option value="doctor">Doctor</option>
+                            <option value="admin">Administration</option>
+                            <option value="lab">Laboratory</option>
+                            <option value="radiology">Radiology</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="regIdDocument">ID Document (PDF/Image) *</label>
+                        <input type="file" id="regIdDocument" name="idDocument" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <small>Upload your government ID, passport, or license</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="regQualifications">Qualifications/Certificates (PDF/Image) *</label>
+                        <input type="file" id="regQualifications" name="qualifications" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <small>Upload your professional qualifications or certificates</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="regResume">Resume/CV (PDF) *</label>
+                        <input type="file" id="regResume" name="resume" accept=".pdf" required>
+                        <small>Upload your resume or curriculum vitae</small>
+                    </div>
+
+                    <div class="form-group checkbox">
+                        <input type="checkbox" id="regAgree" name="agree" required>
+                        <label for="regAgree">I agree to the terms and conditions and understand my account will require admin approval</label>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Create Account</button>
+                    <p class="info-text">Your documents will be reviewed by our admin team. You'll receive an email once approved.</p>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -703,8 +802,45 @@
             }
         }
 
-        // Handle staff form submission
-        document.getElementById('staffForm').addEventListener('submit', function(e) {
+        // Tab switching with slide animation
+        function switchTab(tabName) {
+            const loginTab = document.getElementById('loginTab');
+            const registerTab = document.getElementById('registerTab');
+            const buttons = document.querySelectorAll('.tab-button');
+
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            if (tabName === 'login') {
+                registerTab.classList.add('leaving');
+                setTimeout(() => {
+                    registerTab.classList.remove('active', 'leaving');
+                    loginTab.classList.add('active');
+                    buttons[0].classList.add('active');
+                }, 300);
+            } else {
+                loginTab.classList.add('leaving');
+                setTimeout(() => {
+                    loginTab.classList.remove('active', 'leaving');
+                    registerTab.classList.add('active');
+                    buttons[1].classList.add('active');
+                }, 300);
+            }
+        }
+
+        // Handle login form submission
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            alert('✓ Login successful!\n\nEmail: ' + email + '\n\nRedirecting to dashboard...');
+            this.reset();
+            closeStaffModal();
+        });
+
+        // Handle registration form submission
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
             const formData = new FormData(this);
@@ -723,7 +859,7 @@
             localStorage.setItem('staffSubmissions', JSON.stringify(staffSubmissions));
 
             // Show success message
-            alert('✓ Your application has been submitted successfully!\n\nYour documents have been sent to the admin for review.\nYou will receive an email at ' + staffData.email + ' once approved.');
+            alert('✓ Your registration has been submitted successfully!\n\nYour documents have been sent to the admin for review.\nYou will receive an email at ' + staffData.email + ' once approved.');
 
             // Reset form and close modal
             this.reset();
