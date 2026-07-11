@@ -523,6 +523,46 @@
             color: #0c4a6e;
         }
 
+        /* Contact Method Options */
+        .contact-method-options {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-weight: 500;
+            color: #64748b;
+        }
+
+        .radio-option:hover {
+            border-color: #0284c7;
+            background: #f0f9ff;
+        }
+
+        .radio-option input[type="radio"] {
+            cursor: pointer;
+            accent-color: #0284c7;
+        }
+
+        .radio-option input[type="radio"]:checked + span {
+            color: #0284c7;
+            font-weight: 600;
+        }
+
+        .radio-option input[type="radio"]:checked {
+            border-color: #0284c7;
+        }
+
         /* Staff Tabs */
         .staff-tabs {
             display: flex;
@@ -714,16 +754,30 @@
                 <h2>Staff Login</h2>
                 <p class="modal-subtitle">Sign in with OTP verification</p>
 
-                <!-- Email Step -->
+                <!-- Contact Method Selection -->
                 <div id="emailStep" class="login-step active">
                     <form id="emailForm" class="staff-form">
                         <div class="form-group">
-                            <label for="loginEmail">Email Address</label>
-                            <input type="email" id="loginEmail" name="email" required placeholder="your.email@example.com">
+                            <label>Receive OTP via:</label>
+                            <div class="contact-method-options">
+                                <label class="radio-option">
+                                    <input type="radio" name="contactMethod" value="email" checked onchange="updateContactField()">
+                                    <span>Email</span>
+                                </label>
+                                <label class="radio-option">
+                                    <input type="radio" name="contactMethod" value="phone" onchange="updateContactField()">
+                                    <span>Phone Number</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="contactInput" id="contactLabel">Email Address</label>
+                            <input type="email" id="contactInput" name="contact" required placeholder="your.email@example.com">
                         </div>
 
                         <button type="submit" class="btn-submit">Send OTP</button>
-                        <p class="info-text">We'll send a one-time password to your email</p>
+                        <p class="info-text" id="otpInfo">We'll send a one-time password to your email</p>
                     </form>
                 </div>
 
@@ -907,18 +961,42 @@
             }
         }
 
-        // Handle email form submission (send OTP)
+        // Update contact field label and placeholder
+        function updateContactField() {
+            const contactMethod = document.querySelector('input[name="contactMethod"]:checked').value;
+            const contactInput = document.getElementById('contactInput');
+            const contactLabel = document.getElementById('contactLabel');
+            const otpInfo = document.getElementById('otpInfo');
+
+            if (contactMethod === 'email') {
+                contactLabel.textContent = 'Email Address';
+                contactInput.type = 'email';
+                contactInput.placeholder = 'your.email@example.com';
+                otpInfo.textContent = "We'll send a one-time password to your email";
+            } else {
+                contactLabel.textContent = 'Phone Number';
+                contactInput.type = 'tel';
+                contactInput.placeholder = '+1 (555) 000-0000';
+                otpInfo.textContent = "We'll send a one-time password to your phone";
+            }
+            contactInput.value = '';
+        }
+
+        // Handle email/phone form submission (send OTP)
         document.getElementById('emailForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
-            const email = document.getElementById('loginEmail').value;
+            const contactMethod = document.querySelector('input[name="contactMethod"]:checked').value;
+            const contact = document.getElementById('contactInput').value;
 
-            // Generate OTP (in production, send via email)
+            // Generate OTP (in production, send via email/SMS)
             const otp = Math.floor(100000 + Math.random() * 900000);
             sessionStorage.setItem('loginOTP', otp);
-            sessionStorage.setItem('loginEmail', email);
+            sessionStorage.setItem('loginContact', contact);
+            sessionStorage.setItem('loginMethod', contactMethod);
 
-            alert('OTP sent to ' + email + '\n\nOTP (for demo): ' + otp);
+            const method = contactMethod === 'email' ? 'Email' : 'Phone';
+            alert('OTP sent to ' + contact + '\n\nOTP (for demo): ' + otp);
 
             // Move to OTP step
             document.getElementById('emailStep').classList.remove('active');
@@ -931,12 +1009,15 @@
 
             const otpInput = document.getElementById('otpCode').value;
             const correctOTP = sessionStorage.getItem('loginOTP');
-            const email = sessionStorage.getItem('loginEmail');
+            const contact = sessionStorage.getItem('loginContact');
+            const method = sessionStorage.getItem('loginMethod');
 
             if (otpInput === correctOTP) {
-                alert('✓ Login successful!\n\nEmail: ' + email + '\n\nRedirecting to dashboard...');
+                const contactType = method === 'email' ? 'Email' : 'Phone';
+                alert('✓ Login successful!\n\n' + contactType + ': ' + contact + '\n\nRedirecting to dashboard...');
                 sessionStorage.removeItem('loginOTP');
-                sessionStorage.removeItem('loginEmail');
+                sessionStorage.removeItem('loginContact');
+                sessionStorage.removeItem('loginMethod');
                 this.reset();
                 document.getElementById('otpCode').value = '';
                 closeStaffModal();
