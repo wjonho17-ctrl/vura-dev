@@ -476,6 +476,7 @@
             gap: 0;
             margin-bottom: 30px;
             border-bottom: 2px solid #e2e8f0;
+            perspective: 1000px;
         }
 
         .tab-button {
@@ -503,37 +504,49 @@
 
         .tab-content {
             display: none;
-            animation: slideInRight 0.4s ease-out;
+            animation: bookPageFlipIn 0.7s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+            perspective: 1000px;
+            transform-style: preserve-3d;
         }
 
         .tab-content.active {
             display: block;
         }
 
-        @keyframes slideInRight {
-            from {
+        @keyframes bookPageFlipIn {
+            0% {
                 opacity: 0;
-                transform: translateX(30px);
+                transform: rotateY(90deg) rotateX(-20deg);
             }
-            to {
+            50% {
+                opacity: 0.7;
+            }
+            100% {
                 opacity: 1;
-                transform: translateX(0);
+                transform: rotateY(0deg) rotateX(0deg);
             }
         }
 
-        @keyframes slideOutLeft {
-            from {
+        @keyframes bookPageFlipOut {
+            0% {
                 opacity: 1;
-                transform: translateX(0);
+                transform: rotateY(0deg) rotateX(0deg);
             }
-            to {
+            50% {
+                opacity: 0.7;
+            }
+            100% {
                 opacity: 0;
-                transform: translateX(-30px);
+                transform: rotateY(-90deg) rotateX(20deg);
             }
         }
 
         .tab-content.leaving {
-            animation: slideOutLeft 0.3s ease-in forwards;
+            animation: bookPageFlipOut 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+        }
+
+        .modal-content {
+            perspective: 1200px;
         }
     </style>
 </head>
