@@ -563,6 +563,105 @@
             border-color: #0284c7;
         }
 
+        /* PIN Confirmation */
+        .pin-confirmation {
+            text-align: center;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .pin-confirmation h3 {
+            color: #0c4a6e;
+            font-size: 24px;
+            margin: 0 0 10px 0;
+        }
+
+        .success-message {
+            color: #10b981;
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+
+        .confirmation-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+            background: #f0f9ff;
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .detail-item label {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .detail-item p {
+            font-size: 16px;
+            color: #0c4a6e;
+            font-weight: 600;
+            margin: 0;
+            word-break: break-all;
+        }
+
+        .pin-box {
+            background: linear-gradient(135deg, #001a4d 0%, #0284c7 100%);
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            color: white;
+        }
+
+        .pin-label {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 15px;
+        }
+
+        .pin-display {
+            font-size: 48px;
+            font-weight: 700;
+            letter-spacing: 12px;
+            font-family: 'Courier New', monospace;
+            margin: 20px 0;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .btn-copy {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-copy:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .warning-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .warning-box p {
+            color: #92400e;
+            font-size: 13px;
+            margin: 0;
+            line-height: 1.5;
+        }
+
         /* Staff Tabs */
         .staff-tabs {
             display: flex;
@@ -796,6 +895,37 @@
                     </form>
                 </div>
 
+                <!-- PIN Confirmation Step -->
+                <div id="pinStep" class="login-step">
+                    <div class="pin-confirmation">
+                        <h3>Login Successful!</h3>
+                        <p class="success-message">Your PIN has been sent to your contact</p>
+
+                        <div class="confirmation-details">
+                            <div class="detail-item">
+                                <label>Name</label>
+                                <p id="confirmName">Staff Name</p>
+                            </div>
+                            <div class="detail-item">
+                                <label>Contact</label>
+                                <p id="confirmContact">contact@example.com</p>
+                            </div>
+                        </div>
+
+                        <div class="pin-box">
+                            <p class="pin-label">Your PIN (Save it)</p>
+                            <div class="pin-display" id="pinDisplay">0000</div>
+                            <button type="button" class="btn-copy" onclick="copyPin()">Copy PIN</button>
+                        </div>
+
+                        <div class="warning-box">
+                            <p>Please write down and save this PIN in a safe place. You'll need it for future reference.</p>
+                        </div>
+
+                        <button type="button" class="btn-submit" onclick="completeLogin()">Continue to Dashboard</button>
+                    </div>
+                </div>
+
                 <p class="info-text" style="margin-top:20px;">Don't have an account? <a href="#" onclick="switchTab('register'); return false;" class="register-link">Create one here</a></p>
             </div>
 
@@ -1013,18 +1143,58 @@
             const method = sessionStorage.getItem('loginMethod');
 
             if (otpInput === correctOTP) {
-                const contactType = method === 'email' ? 'Email' : 'Phone';
-                alert('✓ Login successful!\n\n' + contactType + ': ' + contact + '\n\nRedirecting to dashboard...');
-                sessionStorage.removeItem('loginOTP');
-                sessionStorage.removeItem('loginContact');
-                sessionStorage.removeItem('loginMethod');
+                // Generate 4-digit PIN
+                const pin = String(Math.floor(1000 + Math.random() * 9000));
+
+                // Get name from contact (for demo, extract name)
+                const name = 'Staff Member';
+
+                // Store PIN and show confirmation
+                sessionStorage.setItem('loginPIN', pin);
+                sessionStorage.setItem('staffName', name);
+                sessionStorage.setItem('staffContact', contact);
+
+                // Show PIN confirmation screen
+                document.getElementById('otpStep').classList.remove('active');
+                document.getElementById('pinStep').classList.add('active');
+
+                // Display confirmation details
+                document.getElementById('confirmName').textContent = name;
+                document.getElementById('confirmContact').textContent = contact;
+                document.getElementById('pinDisplay').textContent = pin;
+
                 this.reset();
                 document.getElementById('otpCode').value = '';
-                closeStaffModal();
             } else {
                 alert('Invalid OTP. Please try again.');
             }
         });
+
+        // Copy PIN to clipboard
+        function copyPin() {
+            const pin = document.getElementById('pinDisplay').textContent;
+            navigator.clipboard.writeText(pin).then(() => {
+                alert('PIN copied to clipboard!');
+            });
+        }
+
+        // Complete login and close modal
+        function completeLogin() {
+            const name = sessionStorage.getItem('staffName');
+            const pin = sessionStorage.getItem('loginPIN');
+
+            alert('✓ Login successful!\n\nWelcome, ' + name + '!\nYour PIN: ' + pin + '\n\nRedirecting to dashboard...');
+
+            // Clear session storage
+            sessionStorage.removeItem('loginOTP');
+            sessionStorage.removeItem('loginContact');
+            sessionStorage.removeItem('loginMethod');
+            sessionStorage.removeItem('loginPIN');
+            sessionStorage.removeItem('staffName');
+            sessionStorage.removeItem('staffContact');
+
+            closeStaffModal();
+        }
 
         // Back to email step
         function backToEmail() {
