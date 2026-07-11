@@ -1209,36 +1209,45 @@
         }
 
         // Update registration form based on account type
-        document.querySelectorAll('input[name="accountType"]').forEach(radio => {
-            radio.addEventListener('change', function() {
-                const accountType = this.value;
-                const departmentGroup = document.getElementById('departmentGroup');
-                const hospitalDeptGroup = document.getElementById('hospitalDeptGroup');
-                const pharmacyTypeGroup = document.getElementById('pharmacyTypeGroup');
+        function updateFormFields() {
+            const checkedRadio = document.querySelector('input[name="accountType"]:checked');
+            if (!checkedRadio) return;
 
-                if (accountType === 'employee') {
-                    departmentGroup.style.display = 'flex';
-                    hospitalDeptGroup.style.display = 'none';
-                    pharmacyTypeGroup.style.display = 'none';
-                    document.getElementById('regDepartment').required = true;
-                    document.getElementById('regHospitalDept').required = false;
-                    document.getElementById('regPharmacyType').required = false;
-                } else if (accountType === 'hospital') {
-                    departmentGroup.style.display = 'none';
-                    hospitalDeptGroup.style.display = 'flex';
-                    pharmacyTypeGroup.style.display = 'none';
-                    document.getElementById('regDepartment').required = false;
-                    document.getElementById('regHospitalDept').required = true;
-                    document.getElementById('regPharmacyType').required = false;
-                } else if (accountType === 'pharmacy') {
-                    departmentGroup.style.display = 'none';
-                    hospitalDeptGroup.style.display = 'none';
-                    pharmacyTypeGroup.style.display = 'flex';
-                    document.getElementById('regDepartment').required = false;
-                    document.getElementById('regHospitalDept').required = false;
-                    document.getElementById('regPharmacyType').required = true;
-                }
-            });
+            const accountType = checkedRadio.value;
+            const departmentGroup = document.getElementById('departmentGroup');
+            const hospitalDeptGroup = document.getElementById('hospitalDeptGroup');
+            const pharmacyTypeGroup = document.getElementById('pharmacyTypeGroup');
+
+            if (accountType === 'employee') {
+                departmentGroup.style.display = 'flex';
+                hospitalDeptGroup.style.display = 'none';
+                pharmacyTypeGroup.style.display = 'none';
+                document.getElementById('regDepartment').required = true;
+                document.getElementById('regHospitalDept').required = false;
+                document.getElementById('regPharmacyType').required = false;
+            } else if (accountType === 'hospital') {
+                departmentGroup.style.display = 'none';
+                hospitalDeptGroup.style.display = 'flex';
+                pharmacyTypeGroup.style.display = 'none';
+                document.getElementById('regDepartment').required = false;
+                document.getElementById('regHospitalDept').required = true;
+                document.getElementById('regPharmacyType').required = false;
+            } else if (accountType === 'pharmacy') {
+                departmentGroup.style.display = 'none';
+                hospitalDeptGroup.style.display = 'none';
+                pharmacyTypeGroup.style.display = 'flex';
+                document.getElementById('regDepartment').required = false;
+                document.getElementById('regHospitalDept').required = false;
+                document.getElementById('regPharmacyType').required = true;
+            }
+        }
+
+        // Initialize on page load
+        updateFormFields();
+
+        // Update on radio button change
+        document.querySelectorAll('input[name="accountType"]').forEach(radio => {
+            radio.addEventListener('change', updateFormFields);
         });
 
         // Complete login and close modal
