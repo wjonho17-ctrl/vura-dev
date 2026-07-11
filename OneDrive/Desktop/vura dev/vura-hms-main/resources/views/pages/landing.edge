@@ -483,6 +483,46 @@
             text-decoration: underline;
         }
 
+        /* Login Steps */
+        .login-step {
+            display: none;
+        }
+
+        .login-step.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .step-info {
+            color: #0c4a6e;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .btn-back {
+            background: #e2e8f0;
+            color: #0c4a6e;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn-back:hover {
+            background: #cbd5e1;
+            color: #0c4a6e;
+        }
+
         /* Staff Tabs */
         .staff-tabs {
             display: flex;
@@ -672,21 +712,37 @@
             <!-- Login Form -->
             <div id="loginTab" class="tab-content active">
                 <h2>Staff Login</h2>
-                <p class="modal-subtitle">Sign in with your credentials</p>
-                <form id="loginForm" class="staff-form">
-                    <div class="form-group">
-                        <label for="loginEmail">Email Address</label>
-                        <input type="email" id="loginEmail" name="email" required placeholder="your.email@example.com">
-                    </div>
+                <p class="modal-subtitle">Sign in with OTP verification</p>
 
-                    <div class="form-group">
-                        <label for="loginPassword">Password</label>
-                        <input type="password" id="loginPassword" name="password" required placeholder="Enter your password">
-                    </div>
+                <!-- Email Step -->
+                <div id="emailStep" class="login-step active">
+                    <form id="emailForm" class="staff-form">
+                        <div class="form-group">
+                            <label for="loginEmail">Email Address</label>
+                            <input type="email" id="loginEmail" name="email" required placeholder="your.email@example.com">
+                        </div>
 
-                    <button type="submit" class="btn-submit">Sign In</button>
-                    <p class="info-text">Don't have an account? <a href="#" onclick="switchTab('register'); return false;" class="register-link">Create one here</a></p>
-                </form>
+                        <button type="submit" class="btn-submit">Send OTP</button>
+                        <p class="info-text">We'll send a one-time password to your email</p>
+                    </form>
+                </div>
+
+                <!-- OTP Step -->
+                <div id="otpStep" class="login-step">
+                    <form id="otpForm" class="staff-form">
+                        <p class="step-info">Enter the OTP sent to your email</p>
+                        <div class="form-group">
+                            <label for="otpCode">One-Time Password</label>
+                            <input type="text" id="otpCode" name="otp" maxlength="6" required placeholder="000000">
+                        </div>
+
+                        <button type="submit" class="btn-submit">Verify & Sign In</button>
+                        <button type="button" class="btn-back" onclick="backToEmail()">Back to Email</button>
+                        <p class="info-text">OTP valid for 10 minutes</p>
+                    </form>
+                </div>
+
+                <p class="info-text" style="margin-top:20px;">Don't have an account? <a href="#" onclick="switchTab('register'); return false;" class="register-link">Create one here</a></p>
             </div>
 
             <!-- Register Form -->
@@ -707,11 +763,6 @@
                     <div class="form-group">
                         <label for="regPhone">Phone Number</label>
                         <input type="tel" id="regPhone" name="phone" required placeholder="+1 (555) 000-0000">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="regPassword">Password</label>
-                        <input type="password" id="regPassword" name="password" required placeholder="Create a strong password">
                     </div>
 
                     <div class="form-group">
@@ -856,17 +907,49 @@
             }
         }
 
-        // Handle login form submission
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
+        // Handle email form submission (send OTP)
+        document.getElementById('emailForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
             const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
 
-            alert('✓ Login successful!\n\nEmail: ' + email + '\n\nRedirecting to dashboard...');
-            this.reset();
-            closeStaffModal();
+            // Generate OTP (in production, send via email)
+            const otp = Math.floor(100000 + Math.random() * 900000);
+            sessionStorage.setItem('loginOTP', otp);
+            sessionStorage.setItem('loginEmail', email);
+
+            alert('OTP sent to ' + email + '\n\nOTP (for demo): ' + otp);
+
+            // Move to OTP step
+            document.getElementById('emailStep').classList.remove('active');
+            document.getElementById('otpStep').classList.add('active');
         });
+
+        // Handle OTP form submission
+        document.getElementById('otpForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const otpInput = document.getElementById('otpCode').value;
+            const correctOTP = sessionStorage.getItem('loginOTP');
+            const email = sessionStorage.getItem('loginEmail');
+
+            if (otpInput === correctOTP) {
+                alert('✓ Login successful!\n\nEmail: ' + email + '\n\nRedirecting to dashboard...');
+                sessionStorage.removeItem('loginOTP');
+                sessionStorage.removeItem('loginEmail');
+                this.reset();
+                document.getElementById('otpCode').value = '';
+                closeStaffModal();
+            } else {
+                alert('Invalid OTP. Please try again.');
+            }
+        });
+
+        // Back to email step
+        function backToEmail() {
+            document.getElementById('otpStep').classList.remove('active');
+            document.getElementById('emailStep').classList.add('active');
+        }
 
         // Handle registration form submission
         document.getElementById('registerForm').addEventListener('submit', function(e) {
