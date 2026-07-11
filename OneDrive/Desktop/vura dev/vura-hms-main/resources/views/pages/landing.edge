@@ -962,9 +962,10 @@
                         <input type="tel" id="regPhone" name="phone" required placeholder="+1 (555) 000-0000">
                     </div>
 
-                    <div class="form-group">
+                    <!-- Employee Department -->
+                    <div id="departmentGroup" class="form-group" style="display:block;">
                         <label for="regDepartment">Department</label>
-                        <select id="regDepartment" name="department" required>
+                        <select id="regDepartment" name="department">
                             <option value="">Select Department</option>
                             <option value="nursing">Nursing</option>
                             <option value="pharmacy">Pharmacy</option>
@@ -972,6 +973,18 @@
                             <option value="admin">Administration</option>
                             <option value="lab">Laboratory</option>
                             <option value="radiology">Radiology</option>
+                        </select>
+                    </div>
+
+                    <!-- Organization Type -->
+                    <div id="orgTypeGroup" class="form-group" style="display:none;">
+                        <label for="regOrgType">Organization Type</label>
+                        <select id="regOrgType" name="orgType">
+                            <option value="">Select Organization Type</option>
+                            <option value="hospital">Hospital</option>
+                            <option value="pharmacy">Pharmacy</option>
+                            <option value="clinic">Clinic</option>
+                            <option value="healthCenter">Health Center</option>
                         </select>
                     </div>
 
@@ -1188,6 +1201,27 @@
             });
         }
 
+        // Update registration form based on account type
+        document.querySelectorAll('input[name="accountType"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const accountType = this.value;
+                const departmentGroup = document.getElementById('departmentGroup');
+                const orgTypeGroup = document.getElementById('orgTypeGroup');
+
+                if (accountType === 'employee') {
+                    departmentGroup.style.display = 'flex';
+                    orgTypeGroup.style.display = 'none';
+                    document.getElementById('regDepartment').required = true;
+                    document.getElementById('regOrgType').required = false;
+                } else {
+                    departmentGroup.style.display = 'none';
+                    orgTypeGroup.style.display = 'flex';
+                    document.getElementById('regDepartment').required = false;
+                    document.getElementById('regOrgType').required = true;
+                }
+            });
+        });
+
         // Complete login and close modal
         function completeLogin() {
             const name = sessionStorage.getItem('staffName');
@@ -1218,12 +1252,14 @@
 
             const formData = new FormData(this);
             const accountType = formData.get('accountType');
+
             const staffData = {
                 accountType: accountType,
                 fullName: formData.get('fullName'),
                 email: formData.get('email'),
                 phone: formData.get('phone'),
-                department: formData.get('department'),
+                department: accountType === 'employee' ? formData.get('department') : null,
+                orgType: accountType === 'organization' ? formData.get('orgType') : null,
                 status: 'pending_approval',
                 submittedAt: new Date().toLocaleString()
             };
@@ -1234,11 +1270,31 @@
             localStorage.setItem('staffSubmissions', JSON.stringify(staffSubmissions));
 
             // Show success message
-            const accountTypeText = accountType === 'employee' ? 'Employee Account' : 'Organization Account';
-            alert('✓ Your registration has been submitted successfully!\n\nAccount Type: ' + accountTypeText + '\n\nYour documents have been sent to the admin for review.\nYou will receive an email at ' + staffData.email + ' once approved.');
+            let accountTypeText = '';
+            let detailText = '';
+
+            if (accountType === 'employee') {
+                accountTypeText = 'Employee Account';
+                const dept = formData.get('department');
+                detailText = '\nDepartment: ' + (dept.charAt(0).toUpperCase() + dept.slice(1));
+            } else {
+                accountTypeText = 'Organization Account';
+                const orgType = formData.get('orgType');
+                const orgTypeNames = {
+                    'hospital': 'Hospital',
+                    'pharmacy': 'Pharmacy',
+                    'clinic': 'Clinic',
+                    'healthCenter': 'Health Center'
+                };
+                detailText = '\nOrganization Type: ' + (orgTypeNames[orgType] || orgType);
+            }
+
+            alert('✓ Your registration has been submitted successfully!\n\nAccount Type: ' + accountTypeText + detailText + '\n\nYour documents have been sent to the admin for review.\nYou will receive an email at ' + staffData.email + ' once approved.');
 
             // Reset form and close modal
             this.reset();
+            document.getElementById('departmentGroup').style.display = 'flex';
+            document.getElementById('orgTypeGroup').style.display = 'none';
             closeStaffModal();
         });
     </script>
