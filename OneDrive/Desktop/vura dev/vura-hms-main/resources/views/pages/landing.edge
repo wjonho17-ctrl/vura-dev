@@ -470,6 +470,19 @@
             margin: 0;
         }
 
+        .register-link {
+            color: #0284c7;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .register-link:hover {
+            color: #0369a1;
+            text-decoration: underline;
+        }
+
         /* Staff Tabs */
         .staff-tabs {
             display: flex;
@@ -652,57 +665,57 @@
 
             <!-- Tabs -->
             <div class="staff-tabs">
-                <button class="tab-button active" onclick="switchTab('login')">🔐 Login</button>
-                <button class="tab-button" onclick="switchTab('register')">📝 Register</button>
+                <button class="tab-button active" onclick="switchTab('login')">Login</button>
+                <button class="tab-button" id="registerTabBtn" onclick="switchTab('register')" style="display:none;">Register</button>
             </div>
 
             <!-- Login Form -->
             <div id="loginTab" class="tab-content active">
-                <h2>👤 Staff Login</h2>
+                <h2>Staff Login</h2>
                 <p class="modal-subtitle">Sign in with your credentials</p>
                 <form id="loginForm" class="staff-form">
                     <div class="form-group">
-                        <label for="loginEmail">Email Address *</label>
+                        <label for="loginEmail">Email Address</label>
                         <input type="email" id="loginEmail" name="email" required placeholder="your.email@example.com">
                     </div>
 
                     <div class="form-group">
-                        <label for="loginPassword">Password *</label>
+                        <label for="loginPassword">Password</label>
                         <input type="password" id="loginPassword" name="password" required placeholder="Enter your password">
                     </div>
 
                     <button type="submit" class="btn-submit">Sign In</button>
-                    <p class="info-text">Don't have an account? Click the <strong>Register</strong> tab above</p>
+                    <p class="info-text">Don't have an account? <a href="#" onclick="switchTab('register'); return false;" class="register-link">Create one here</a></p>
                 </form>
             </div>
 
             <!-- Register Form -->
             <div id="registerTab" class="tab-content">
-                <h2>📝 Staff Registration</h2>
+                <h2>Staff Registration</h2>
                 <p class="modal-subtitle">Create a new staff account</p>
                 <form id="registerForm" class="staff-form">
                     <div class="form-group">
-                        <label for="regFullName">Full Name *</label>
+                        <label for="regFullName">Full Name</label>
                         <input type="text" id="regFullName" name="fullName" required placeholder="Enter your full name">
                     </div>
 
                     <div class="form-group">
-                        <label for="regEmail">Email Address *</label>
+                        <label for="regEmail">Email Address</label>
                         <input type="email" id="regEmail" name="email" required placeholder="your.email@example.com">
                     </div>
 
                     <div class="form-group">
-                        <label for="regPhone">Phone Number *</label>
+                        <label for="regPhone">Phone Number</label>
                         <input type="tel" id="regPhone" name="phone" required placeholder="+1 (555) 000-0000">
                     </div>
 
                     <div class="form-group">
-                        <label for="regPassword">Password *</label>
+                        <label for="regPassword">Password</label>
                         <input type="password" id="regPassword" name="password" required placeholder="Create a strong password">
                     </div>
 
                     <div class="form-group">
-                        <label for="regDepartment">Department *</label>
+                        <label for="regDepartment">Department</label>
                         <select id="regDepartment" name="department" required>
                             <option value="">Select Department</option>
                             <option value="nursing">Nursing</option>
@@ -715,21 +728,21 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="regIdDocument">ID Document (PDF/Image) *</label>
+                        <label for="regIdDocument">ID Document</label>
                         <input type="file" id="regIdDocument" name="idDocument" accept=".pdf,.jpg,.jpeg,.png" required>
-                        <small>Upload your government ID, passport, or license</small>
+                        <small>Government ID, passport, or license (PDF or image)</small>
                     </div>
 
                     <div class="form-group">
-                        <label for="regQualifications">Qualifications/Certificates (PDF/Image) *</label>
+                        <label for="regQualifications">Qualifications</label>
                         <input type="file" id="regQualifications" name="qualifications" accept=".pdf,.jpg,.jpeg,.png" required>
-                        <small>Upload your professional qualifications or certificates</small>
+                        <small>Professional qualifications or certificates (PDF or image)</small>
                     </div>
 
                     <div class="form-group">
-                        <label for="regResume">Resume/CV (PDF) *</label>
+                        <label for="regResume">Resume</label>
                         <input type="file" id="regResume" name="resume" accept=".pdf" required>
-                        <small>Upload your resume or curriculum vitae</small>
+                        <small>Resume or curriculum vitae (PDF)</small>
                     </div>
 
                     <div class="form-group checkbox">
@@ -815,11 +828,12 @@
             }
         }
 
-        // Tab switching with slide animation
+        // Tab switching with book flip animation
         function switchTab(tabName) {
             const loginTab = document.getElementById('loginTab');
             const registerTab = document.getElementById('registerTab');
             const buttons = document.querySelectorAll('.tab-button');
+            const registerTabBtn = document.getElementById('registerTabBtn');
 
             buttons.forEach(btn => btn.classList.remove('active'));
 
@@ -829,8 +843,10 @@
                     registerTab.classList.remove('active', 'leaving');
                     loginTab.classList.add('active');
                     buttons[0].classList.add('active');
+                    registerTabBtn.style.display = 'none';
                 }, 300);
             } else {
+                registerTabBtn.style.display = 'block';
                 loginTab.classList.add('leaving');
                 setTimeout(() => {
                     loginTab.classList.remove('active', 'leaving');
