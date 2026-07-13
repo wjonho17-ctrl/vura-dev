@@ -1,0 +1,134 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: vsdc-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${DB_USER:-mihig}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-post}
+      POSTGRES_DB: ${DB_DATABASE:-vsdc_api}
+      TZ: ${TZ:-UTC}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-mihig}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vsdc-network
+
+  # MeiliSearch (Search Engine)
+  meilisearch:
+    image: getmeili/meilisearch:v1.7
+    container_name: vsdc-meilisearch
+    ports:
+      - "7700:7700"
+    environment:
+      MEILI_MASTER_KEY: ${MEILISEARCH_API_KEY:-xbqhi4HYpnHHsnCqthtByr5KLT3Ag6Q7s8mkEVnJqh8}
+    volumes:
+      - meilisearch_data:/meili_data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vsdc-network
+
+  # Backend API (AdonisJS)
+  backend:
+    build:
+      context: ./yb-vsdc-api
+      dockerfile: Dockerfile.dev
+    container_name: vsdc-api
+    ports:
+      - "${APP_PORT:-8000}:3333"
+    environment:
+      TZ: ${TZ:-UTC}
+      PORT: 3333
+      HOST: 0.0.0.0
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      APP_KEY: ${APP_KEY}
+      NODE_ENV: ${NODE_ENV:-development}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-mihig}
+      DB_PASSWORD: ${DB_PASSWORD:-post}
+      DB_DATABASE: ${DB_DATABASE:-vsdc_api}
+      BASE_URL: ${BASE_URL:-http://localhost:8000}
+      APP_PHONE_NUMBER: ${APP_PHONE_NUMBER}
+      EBM_SANDBOX_TIN: ${EBM_SANDBOX_TIN}
+      EBM_SANDBOX_BHF_ID: ${EBM_SANDBOX_BHF_ID}
+      EBM_SANDBOX_MRC: ${EBM_SANDBOX_MRC}
+      EBM_SANDBOX_SRL_NO: ${EBM_SANDBOX_SRL_NO}
+      EBM_BASE_URL: ${EBM_BASE_URL}
+      EBM_API_VERSION: ${EBM_API_VERSION}
+      EBM_TAX_RATE_A: ${EBM_TAX_RATE_A}
+      EBM_TAX_RATE_B: ${EBM_TAX_RATE_B}
+      EBM_TAX_RATE_C: ${EBM_TAX_RATE_C}
+      EBM_TAX_RATE_D: ${EBM_TAX_RATE_D}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_FULL_NAME: ${ADMIN_FULL_NAME}
+      DRIVE_DISK: ${DRIVE_DISK:-fs}
+      R2_KEY: ${R2_KEY}
+      R2_SECRET: ${R2_SECRET}
+      R2_BUCKET: ${R2_BUCKET}
+      R2_ENDPOINT: ${R2_ENDPOINT}
+      MEILISEARCH_HOST: http://meilisearch:7700
+      MEILISEARCH_API_KEY: ${MEILISEARCH_API_KEY}
+      MY_RRA_PURCHASE_CODE_DEV: ${MY_RRA_PURCHASE_CODE_DEV}
+      MY_RRA_PURCHASE_CODE: ${MY_RRA_PURCHASE_CODE}
+      ADMIN_TIN: ${ADMIN_TIN}
+      ADMIN_SERIAL_NO: ${ADMIN_SERIAL_NO}
+    depends_on:
+      db:
+        condition: service_healthy
+      meilisearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3333/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vsdc-network
+    restart: unless-stopped
+
+  # Frontend (Vue 3 + Vite)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: vsdc-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://backend:3333
+      NODE_ENV: production
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vsdc-network
+    restart: unless-stopped
+
+volumes:
+  db_data:
+    driver: local
+  meilisearch_data:
+    driver: local
+
+networks:
+  vsdc-network:
+    driver: bridge
