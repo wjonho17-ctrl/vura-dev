@@ -59,6 +59,35 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* PrimeVue component customization */
+:root {
+  --primary-color: var(--brand-600);
+  --primary-400: #60a5fa;
+  --primary-50: var(--brand-50);
+  --primary-100: var(--brand-100);
+  --primary-500: var(--brand-500);
+  --primary-700: var(--brand-700);
+  --primary-900: var(--brand-900);
+  --surface-ground: #f8fafd;
+  --surface-card: #fff;
+  --surface-50: var(--ink-100);
+  --surface-border: var(--ink-200);
+  --text-color: var(--ink-900);
+  --text-color-secondary: var(--ink-600);
+  --success-color: var(--ok);
+  --success-50: #dcfce7;
+  --success-500: var(--ok);
+  --warning-color: var(--warn);
+  --warning-50: #fef3c7;
+  --error-color: var(--err);
+  --error-50: #fee2e2;
+  --blue-500: #3b82f6;
+  --green-500: #22c55e;
+  --red-500: #ef4444;
+}
+
+.w-full { width: 100%; }
+
 a { color: inherit; text-decoration: none; }
 button { font-family: inherit; cursor: pointer; }
 input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }

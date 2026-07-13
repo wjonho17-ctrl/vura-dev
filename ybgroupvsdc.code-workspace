@@ -1,0 +1,177 @@
+{
+  "folders": [
+    {
+      "name": "🏥 VSDC (Root)",
+      "path": "."
+    },
+    {
+      "name": "🎨 Frontend (React)",
+      "path": "frontend"
+    },
+    {
+      "name": "⚙️ API (AdonisJS)",
+      "path": "yb-vsdc-api"
+    }
+  ],
+  "settings": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "[typescript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[javascript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    },
+    "typescript.enablePromptUseWorkspaceTsdk": true,
+    "typescript.tsdk": "yb-vsdc-api/node_modules/typescript/lib",
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/.next": true
+    },
+    "files.exclude": {
+      "**/.git": true,
+      "**/node_modules": true
+    },
+    "files.watcherExclude": {
+      "**/node_modules/**": true,
+      "**/.git/objects/**": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "esbenp.prettier-vscode",
+      "dbaeumer.vscode-eslint",
+      "ms-vscode.vscode-typescript-next",
+      "PKief.material-icon-theme",
+      "GitHub.copilot",
+      "ms-vscode.remote-explorer",
+      "bradlc.vscode-tailwindcss",
+      "dsznajder.es7-react-js-snippets",
+      "adonis-js.adonisjs-vscode-extension"
+    ]
+  },
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "🎨 Frontend (Vite Dev)",
+        "type": "node",
+        "request": "launch",
+        "runtimeExecutable": "npm",
+        "runtimeArgs": ["run", "dev"],
+        "cwd": "${workspaceFolder:🎨 Frontend (React)}",
+        "console": "integratedTerminal",
+        "internalConsoleOptions": "neverOpen",
+        "sourceMapPathOverride": {
+          "${webRoot}/*": "${workspaceFolder:🎨 Frontend (React)}/*"
+        }
+      },
+      {
+        "name": "⚙️ API (AdonisJS Dev)",
+        "type": "node",
+        "request": "launch",
+        "runtimeExecutable": "npm",
+        "runtimeArgs": ["run", "dev"],
+        "cwd": "${workspaceFolder:⚙️ API (AdonisJS)}",
+        "console": "integratedTerminal",
+        "internalConsoleOptions": "neverOpen",
+        "protocol": "inspector"
+      },
+      {
+        "name": "🧪 API Tests",
+        "type": "node",
+        "request": "launch",
+        "runtimeExecutable": "npm",
+        "runtimeArgs": ["test"],
+        "cwd": "${workspaceFolder:⚙️ API (AdonisJS)}",
+        "console": "integratedTerminal"
+      }
+    ],
+    "compounds": [
+      {
+        "name": "🚀 Run All (API + Frontend)",
+        "configurations": ["⚙️ API (AdonisJS Dev)", "🎨 Frontend (Vite Dev)"]
+      }
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "🎨 Frontend: Dev",
+        "type": "npm",
+        "script": "dev",
+        "path": "frontend/",
+        "problemMatcher": [],
+        "group": {
+          "kind": "build",
+          "isDefault": false
+        }
+      },
+      {
+        "label": "⚙️ API: Dev",
+        "type": "npm",
+        "script": "dev",
+        "path": "yb-vsdc-api/",
+        "problemMatcher": [],
+        "group": {
+          "kind": "build",
+          "isDefault": false
+        }
+      },
+      {
+        "label": "⚙️ API: Database Fresh",
+        "type": "npm",
+        "script": "db:fr",
+        "path": "yb-vsdc-api/",
+        "problemMatcher": []
+      },
+      {
+        "label": "⚙️ API: Test",
+        "type": "npm",
+        "script": "test",
+        "path": "yb-vsdc-api/",
+        "problemMatcher": []
+      },
+      {
+        "label": "🎨 Frontend: Build",
+        "type": "npm",
+        "script": "build",
+        "path": "frontend/",
+        "problemMatcher": []
+      },
+      {
+        "label": "⚙️ API: Build",
+        "type": "npm",
+        "script": "build",
+        "path": "yb-vsdc-api/",
+        "problemMatcher": []
+      },
+      {
+        "label": "⚙️ API: Lint",
+        "type": "npm",
+        "script": "lint",
+        "path": "yb-vsdc-api/",
+        "problemMatcher": []
+      },
+      {
+        "label": "⚙️ API: Format",
+        "type": "npm",
+        "script": "format",
+        "path": "yb-vsdc-api/",
+        "problemMatcher": []
+      },
+      {
+        "label": "🎨 Frontend: Lint",
+        "type": "npm",
+        "script": "lint",
+        "path": "frontend/",
+        "problemMatcher": []
+      }
+    ]
+  }
+}

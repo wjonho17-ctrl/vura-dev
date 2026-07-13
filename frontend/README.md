@@ -1,16 +1,89 @@
-# React + Vite
+# VSDC Manager - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Modern electronic billing and stock management system for Rwanda EBM 2.1 compliance.
 
-Currently, two official plugins are available:
+## Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+VSDC Manager is a Vue 3 application built with:
+- **Vue 3** - Progressive JavaScript framework
+- **PrimeVue** - Enterprise UI component library
+- **PrimeFlex** - Responsive CSS utility framework
+- **Vite** - Next generation frontend tooling
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- 🏢 **Multi-Branch Operations** - Manage multiple business branches from centralized dashboard
+- 📄 **Billing & Invoicing** - EBM 2.1 compliant invoice and receipt generation
+- 📦 **Stock Management** - Real-time inventory tracking and management
+- 👥 **Customer Management** - Comprehensive customer profiles and history
+- 📊 **Reporting & Analytics** - Detailed business reports and insights
+- 🔐 **Compliance & Security** - Audit trails, encryption, and RRA regulatory compliance
+- 👤 **User Management** - Role-based access control (Admin, Manager, Operator)
+- 📱 **Responsive Design** - Mobile-friendly interface for all devices
 
-## Expanding the ESLint configuration
+## Installation
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Prerequisites
+- Node.js 16+ and npm 8+
+
+### Setup
+
+1. **Install dependencies**
+   ```bash
+   cd frontend
+   npm install
+   ```
+
+2. **Start development server**
+   ```bash
+   npm run dev
+   ```
+   
+   The app will be available at `http://localhost:5173`
+
+## Available Scripts
+
+- `npm run dev` - Start development server with hot reload
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
+
+## Authentication
+
+The app supports two authentication modes:
+
+### Administrator
+- Full system administration
+- User management and settings
+- System-wide reporting
+
+### Device Operator  
+- Billing and invoicing
+- Stock management
+- Customer management
+
+## Key Pages
+
+- **Landing** - Public homepage with features and compliance info
+- **Login** - Authentication with admin/operator modes
+- **Dashboard** - Operator workspace with sales metrics
+- **AdminDashboard** - Admin overview with system metrics and user management
+- **NotFound** - 404 error page
+
+## Building for Production
+
+```bash
+npm run build
+npm run preview
+```
+
+## Browser Support
+
+- Chrome/Edge 90+
+- Firefox 88+
+- Safari 14+
+- Mobile browsers
+
+---
+
+For backend API documentation, see the main README at the project root.
